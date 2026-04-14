@@ -30,3 +30,7 @@ vite.config.js.timestamp-*
 .devcontainer/.env*
 *.tsbuildinfo
 *.tsbuildInfo
+
+.codex
+.playwright-mcp/*
+TASKS.txt

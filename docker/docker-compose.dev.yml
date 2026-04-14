@@ -74,6 +74,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - pnpm_store_server:/buildcache/pnpm-store
       - ../plugins:/build/corePlugin
+      - /home/riordant/Repositories/Personal/keepsake/userdata:/external/userdata
     env_file:
       - .env
     environment:

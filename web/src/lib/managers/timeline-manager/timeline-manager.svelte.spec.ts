@@ -3,7 +3,7 @@ import { eventManager } from '$lib/managers/event-manager.svelte';
 import { getTimelineMonthByDate } from '$lib/managers/timeline-manager/internal/search-support.svelte';
 import { AbortError } from '$lib/utils';
 import { fromISODateTimeUTCToObject } from '$lib/utils/timeline-util';
-import { AssetVisibility, type AssetResponseDto, type TimeBucketAssetResponseDto } from '@immich/sdk';
+import { AssetTypeEnum, AssetVisibility, type AssetResponseDto, type TimeBucketAssetResponseDto } from '@immich/sdk';
 import { assetFactory, timelineAssetFactory, toResponseDto } from '@test-data/factories/asset-factory';
 import { tick } from 'svelte';
 import { TimelineManager } from './timeline-manager.svelte';
@@ -298,6 +298,21 @@ describe('TimelineManager', () => {
       expect(await getAssets(timelineManager)).toEqual([matching]);
     });
 
+    it('ignores new assets that do not match the asset type filter', async () => {
+      await timelineManager.updateOptions({ assetType: AssetTypeEnum.Video });
+
+      const matching = deriveLocalDateTimeFromFileCreatedAt(
+        timelineAssetFactory.build({ isImage: false, isVideo: true }),
+      );
+      const unrelated = deriveLocalDateTimeFromFileCreatedAt(
+        timelineAssetFactory.build({ isImage: true, isVideo: false }),
+      );
+
+      timelineManager.upsertAssets([matching, unrelated]);
+
+      expect(await getAssets(timelineManager)).toEqual([matching]);
+    });
+
     // disabled due to the wasm Justified Layout import
     it('ignores trashed assets when isTrashed is true', async () => {
       const asset = deriveLocalDateTimeFromFileCreatedAt(timelineAssetFactory.build({ isTrashed: false }));
@@ -439,6 +454,28 @@ describe('TimelineManager', () => {
       expect(timelineManager.assetCount).toEqual(0);
 
       timelineManager.upsertAssets([{ ...fixture, isTrashed: true }]);
+      expect(timelineManager.assetCount).toEqual(1);
+    });
+
+    it('asset is removed during upsert when TimelineManager asset type changes', async () => {
+      await timelineManager.updateOptions({
+        assetType: AssetTypeEnum.Video,
+      });
+      const fixture = deriveLocalDateTimeFromFileCreatedAt(
+        timelineAssetFactory.build({
+          isImage: false,
+          isVideo: true,
+        }),
+      );
+
+      timelineManager.upsertAssets([fixture]);
+      expect(timelineManager.assetCount).toEqual(1);
+
+      const updated = Object.freeze({ ...fixture, isImage: true, isVideo: false });
+      timelineManager.upsertAssets([updated]);
+      expect(timelineManager.assetCount).toEqual(0);
+
+      timelineManager.upsertAssets([{ ...fixture, isImage: false, isVideo: true }]);
       expect(timelineManager.assetCount).toEqual(1);
     });
   });

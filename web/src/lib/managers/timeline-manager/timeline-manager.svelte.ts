@@ -23,7 +23,7 @@ import {
   type TimelineDateTime,
   type TimelineYearMonth,
 } from '$lib/utils/timeline-util';
-import { AssetOrder, getAssetInfo, getTimeBuckets, type AssetResponseDto } from '@immich/sdk';
+import { AssetOrder, AssetTypeEnum, getAssetInfo, getTimeBuckets, type AssetResponseDto } from '@immich/sdk';
 import { clamp, isEqual } from 'lodash-es';
 import { SvelteDate, SvelteSet } from 'svelte/reactivity';
 import { isMismatched, updateObject } from './internal/utils.svelte';
@@ -599,7 +599,10 @@ export class TimelineManager extends VirtualScrollManager {
   }
 
   isExcluded(asset: TimelineAsset) {
+    const assetType = asset.isVideo ? AssetTypeEnum.Video : asset.isImage ? AssetTypeEnum.Image : undefined;
+
     return (
+      isMismatched(this.#options.assetType, assetType) ||
       isMismatched(this.#options.visibility, asset.visibility) ||
       isMismatched(this.#options.isFavorite, asset.isFavorite) ||
       isMismatched(this.#options.isTrashed, asset.isTrashed) ||

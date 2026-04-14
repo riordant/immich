@@ -99,6 +99,7 @@ export const Route = {
   // photos
   photos: (params?: { at?: string }) => '/photos' + asQueryString(params),
   viewAsset: ({ id }: { id: string }) => `/photos/${id}`,
+  videos: (params?: { at?: string }) => '/videos' + asQueryString(params),
   archive: () => '/archive',
   favorites: () => '/favorites',
   locked: () => '/locked',

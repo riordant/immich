@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { AssetVisibility } from 'src/enum';
+import { AssetType, AssetVisibility } from 'src/enum';
 import { TimelineService } from 'src/services/timeline.service';
 import { authStub } from 'test/fixtures/auth.stub';
 import { newTestService, ServiceMocks } from 'test/utils';
@@ -39,6 +39,17 @@ describe(TimelineService.name, () => {
       expect(mocks.asset.getTimeBuckets).toHaveBeenCalledWith({
         userIds: [authStub.admin.user.id],
         bbox: { west: -70, south: -30, east: 120, north: 55 },
+      });
+    });
+
+    it('should pass asset type options to repository', async () => {
+      mocks.asset.getTimeBuckets.mockResolvedValue([{ timeBucket: 'bucket', count: 1 }]);
+
+      await sut.getTimeBuckets(authStub.admin, { assetType: AssetType.Video });
+
+      expect(mocks.asset.getTimeBuckets).toHaveBeenCalledWith({
+        assetType: AssetType.Video,
+        userIds: [authStub.admin.user.id],
       });
     });
   });
@@ -147,6 +158,29 @@ describe(TimelineService.name, () => {
       expect(mocks.asset.getTimeBucket).toHaveBeenCalledWith(
         'bucket',
         expect.objectContaining({
+          timeBucket: 'bucket',
+          userIds: [authStub.admin.user.id],
+        }),
+        authStub.admin,
+      );
+    });
+
+    it('should pass asset type filters to get time bucket', async () => {
+      const json = `[{ id: ['asset-id'] }]`;
+      mocks.asset.getTimeBucket.mockResolvedValue({ assets: json });
+
+      await expect(
+        sut.getTimeBucket(authStub.admin, {
+          assetType: AssetType.Video,
+          timeBucket: 'bucket',
+          userId: authStub.admin.user.id,
+        }),
+      ).resolves.toEqual(json);
+
+      expect(mocks.asset.getTimeBucket).toHaveBeenCalledWith(
+        'bucket',
+        expect.objectContaining({
+          assetType: AssetType.Video,
           timeBucket: 'bucket',
           userIds: [authStub.admin.user.id],
         }),

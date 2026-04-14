@@ -13537,6 +13537,15 @@
             }
           },
           {
+            "name": "assetType",
+            "required": false,
+            "in": "query",
+            "description": "Filter by asset type (IMAGE, VIDEO, AUDIO, OTHER)",
+            "schema": {
+              "$ref": "#/components/schemas/AssetTypeEnum"
+            }
+          },
+          {
             "name": "bbox",
             "required": false,
             "in": "query",
@@ -13720,6 +13729,15 @@
             "schema": {
               "format": "uuid",
               "type": "string"
+            }
+          },
+          {
+            "name": "assetType",
+            "required": false,
+            "in": "query",
+            "description": "Filter by asset type (IMAGE, VIDEO, AUDIO, OTHER)",
+            "schema": {
+              "$ref": "#/components/schemas/AssetTypeEnum"
             }
           },
           {
@@ -25232,6 +25250,13 @@
             },
             "type": "array"
           },
+          "originalFileName": {
+            "description": "Array of original file names for each asset",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "ownerId": {
             "description": "Array of owner IDs for each asset",
             "items": {
@@ -25294,6 +25319,7 @@
           "isTrashed",
           "livePhotoVideoId",
           "localOffsetHours",
+          "originalFileName",
           "ownerId",
           "projectionType",
           "ratio",

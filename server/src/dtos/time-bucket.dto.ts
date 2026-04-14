@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 import type { BBoxDto } from 'src/dtos/bbox.dto';
-import { AssetOrder, AssetVisibility } from 'src/enum';
+import { AssetOrder, AssetType, AssetVisibility } from 'src/enum';
 import { ValidateBBox } from 'src/utils/bbox';
 import { ValidateBoolean, ValidateEnum, ValidateUUID } from 'src/validation';
 
@@ -55,6 +55,14 @@ export class TimeBucketDto {
   })
   visibility?: AssetVisibility;
 
+  @ValidateEnum({
+    enum: AssetType,
+    name: 'AssetTypeEnum',
+    optional: true,
+    description: 'Filter by asset type (IMAGE, VIDEO, AUDIO, OTHER)',
+  })
+  assetType?: AssetType;
+
   @ValidateBoolean({
     optional: true,
     description: 'Include location data in the response',
@@ -89,6 +97,13 @@ export class TimeBucketAssetResponseDto {
     description: 'Array of owner IDs for each asset',
   })
   ownerId!: string[];
+
+  @ApiProperty({
+    type: 'array',
+    items: { type: 'string' },
+    description: 'Array of original file names for each asset',
+  })
+  originalFileName!: string[];
 
   @ApiProperty({
     type: 'array',

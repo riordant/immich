@@ -190,6 +190,7 @@ export class TimelineMonth {
         localDateTime,
         fileCreatedAt,
         ownerId: bucketAssets.ownerId[i],
+        originalFileName: bucketAssets.originalFileName[i],
         projectionType: bucketAssets.projectionType[i],
         ratio: bucketAssets.ratio[i],
         stack: bucketAssets.stack?.[i]

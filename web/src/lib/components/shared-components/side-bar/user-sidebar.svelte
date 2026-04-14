@@ -26,6 +26,8 @@
     mdiMagnify,
     mdiMap,
     mdiMapOutline,
+    mdiPlayBox,
+    mdiPlayBoxOutline,
     mdiTagMultipleOutline,
     mdiToolbox,
     mdiToolboxOutline,
@@ -37,6 +39,8 @@
 </script>
 
 <Sidebar ariaLabel={$t('primary')}>
+  <NavbarItem title={$t('videos')} href={Route.videos()} icon={mdiPlayBoxOutline} activeIcon={mdiPlayBox} />
+
   <NavbarItem title={$t('photos')} href={Route.photos()} icon={mdiImageMultipleOutline} activeIcon={mdiImageMultiple} />
 
   {#if featureFlagsManager.value.search}

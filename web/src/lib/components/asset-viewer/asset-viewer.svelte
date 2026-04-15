@@ -510,6 +510,7 @@
         cacheKey={previewStackedAsset!.thumbhash}
         projectionType={previewStackedAsset!.exifInfo?.projectionType}
         loopVideo={true}
+        resumePlayback
         onPreviousAsset={() => navigateAsset('previous')}
         onNextAsset={() => navigateAsset('next')}
         onClose={closeViewer}
@@ -524,6 +525,7 @@
         cacheKey={asset.thumbhash}
         projectionType={asset.exifInfo?.projectionType}
         loopVideo={$slideshowState !== SlideshowState.PlaySlideshow}
+        resumePlayback={false}
         onPreviousAsset={() => navigateAsset('previous')}
         onNextAsset={() => navigateAsset('next')}
         onVideoEnded={() => (assetViewerManager.isPlayingMotionPhoto = false)}
@@ -541,6 +543,7 @@
         cacheKey={asset.thumbhash}
         projectionType={asset.exifInfo?.projectionType}
         loopVideo={$slideshowState !== SlideshowState.PlaySlideshow}
+        resumePlayback
         onPreviousAsset={() => navigateAsset('previous')}
         onNextAsset={() => navigateAsset('next')}
         onClose={closeViewer}

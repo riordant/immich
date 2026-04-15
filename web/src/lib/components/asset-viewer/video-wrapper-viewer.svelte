@@ -11,6 +11,7 @@
     cacheKey: string | null;
     loopVideo: boolean;
     playOriginalVideo: boolean;
+    resumePlayback?: boolean;
     onClose?: () => void;
     onPreviousAsset?: () => void;
     onNextAsset?: () => void;
@@ -25,6 +26,7 @@
     cacheKey,
     loopVideo,
     playOriginalVideo,
+    resumePlayback = false,
     onPreviousAsset,
     onClose,
     onNextAsset,
@@ -43,6 +45,7 @@
     {cacheKey}
     assetId={effectiveAssetId}
     {playOriginalVideo}
+    {resumePlayback}
     {onPreviousAsset}
     {onNextAsset}
     {onVideoEnded}

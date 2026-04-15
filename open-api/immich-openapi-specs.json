@@ -14737,6 +14737,118 @@
         "x-immich-state": "Alpha"
       }
     },
+    "/users/me/video-playback": {
+      "put": {
+        "description": "Save or clear the playback position for a video for the current user.",
+        "operationId": "updateMyVideoPlayback",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VideoPlaybackUpdateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoPlaybackResponseDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "Update my video playback position",
+        "tags": [
+          "Users"
+        ],
+        "x-immich-history": [
+          {
+            "version": "v3.0.0",
+            "state": "Added"
+          },
+          {
+            "version": "v3.0.0",
+            "state": "Alpha"
+          }
+        ],
+        "x-immich-permission": "userPreference.update",
+        "x-immich-state": "Alpha"
+      }
+    },
+    "/users/me/video-playback/{id}": {
+      "get": {
+        "description": "Retrieve the saved playback position for a video for the current user.",
+        "operationId": "getMyVideoPlayback",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoPlaybackResponseDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "Get my video playback position",
+        "tags": [
+          "Users"
+        ],
+        "x-immich-history": [
+          {
+            "version": "v3.0.0",
+            "state": "Added"
+          },
+          {
+            "version": "v3.0.0",
+            "state": "Alpha"
+          }
+        ],
+        "x-immich-permission": "userPreference.read",
+        "x-immich-state": "Alpha"
+      }
+    },
     "/users/profile-image": {
       "delete": {
         "description": "Delete the profile image of the current user.",
@@ -25981,7 +26093,8 @@
           "preferences",
           "license",
           "onboarding",
-          "recent-videos"
+          "recent-videos",
+          "video-playback"
         ],
         "type": "string"
       },
@@ -26262,6 +26375,44 @@
           "webm"
         ],
         "type": "string"
+      },
+      "VideoPlaybackResponseDto": {
+        "properties": {
+          "assetId": {
+            "description": "The asset ID for the playback position response",
+            "format": "uuid",
+            "type": "string"
+          },
+          "positionSeconds": {
+            "description": "Saved playback position in whole seconds, or null if none is stored.",
+            "minimum": 0,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "assetId"
+        ],
+        "type": "object"
+      },
+      "VideoPlaybackUpdateDto": {
+        "properties": {
+          "assetId": {
+            "description": "The asset ID for the video playback position to update",
+            "format": "uuid",
+            "type": "string"
+          },
+          "positionSeconds": {
+            "description": "Playback position in whole seconds. Use 0 to clear saved progress.",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "assetId",
+          "positionSeconds"
+        ],
+        "type": "object"
       },
       "WorkflowActionItemDto": {
         "properties": {

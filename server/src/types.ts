@@ -549,6 +549,9 @@ export interface UserMetadata extends Record<UserMetadataKey, Record<string, any
   [UserMetadataKey.License]: { licenseKey: string; activationKey: string; activatedAt: string };
   [UserMetadataKey.Onboarding]: { isOnboarded: boolean };
   [UserMetadataKey.RecentVideos]: { ids: string[] };
+  [UserMetadataKey.VideoPlayback]: {
+    entries: Array<{ assetId: string; positionSeconds: number; updatedAt: string }>;
+  };
 }
 
 export type MaybeDehydrated<T> = T | ShallowDehydrateObject<T>;

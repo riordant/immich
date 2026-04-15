@@ -179,6 +179,121 @@ describe(UserService.name, () => {
     });
   });
 
+  describe('video playback', () => {
+    beforeEach(() => {
+      mocks.access.asset.checkOwnerAccess.mockImplementation(async (_userId, ids) => new Set(ids));
+      mocks.access.asset.checkAlbumAccess.mockResolvedValue(new Set());
+      mocks.access.asset.checkPartnerAccess.mockResolvedValue(new Set());
+    });
+
+    it('should return the saved playback position for a video', async () => {
+      const video = AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id });
+
+      mocks.user.getMetadata.mockResolvedValue([
+        {
+          key: UserMetadataKey.VideoPlayback,
+          value: {
+            entries: [{ assetId: video.id, positionSeconds: 137, updatedAt: '2026-04-15T11:30:00.000Z' }],
+          },
+        },
+      ]);
+      mocks.asset.getById.mockResolvedValue(getForAsset(video));
+
+      await expect(sut.getMyVideoPlayback(authStub.admin, video.id)).resolves.toEqual({
+        assetId: video.id,
+        positionSeconds: 137,
+      });
+    });
+
+    it('should return null when no playback position is stored', async () => {
+      const video = AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id });
+
+      mocks.user.getMetadata.mockResolvedValue([]);
+      mocks.asset.getById.mockResolvedValue(getForAsset(video));
+
+      await expect(sut.getMyVideoPlayback(authStub.admin, video.id)).resolves.toEqual({
+        assetId: video.id,
+        positionSeconds: null,
+      });
+    });
+
+    it('should update playback position, move the entry to the front, and cap stored entries', async () => {
+      const videos = Array.from({ length: 51 }, () =>
+        AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id }),
+      );
+      const [openedVideo, ...rest] = videos;
+
+      mocks.user.getMetadata.mockResolvedValueOnce([
+        {
+          key: UserMetadataKey.VideoPlayback,
+          value: {
+            entries: rest.map((video, index) => ({
+              assetId: video.id,
+              positionSeconds: index + 1,
+              updatedAt: `2026-04-15T11:${`${index}`.padStart(2, '0')}:00.000Z`,
+            })),
+          },
+        },
+      ]);
+      mocks.asset.getById.mockResolvedValue(getForAsset(openedVideo));
+
+      const result = await sut.updateMyVideoPlayback(authStub.admin, {
+        assetId: openedVideo.id,
+        positionSeconds: 222,
+      });
+
+      expect(mocks.user.upsertMetadata).toHaveBeenCalledWith(
+        authStub.admin.user.id,
+        expect.objectContaining({
+          key: UserMetadataKey.VideoPlayback,
+          value: {
+            entries: [
+              expect.objectContaining({ assetId: openedVideo.id, positionSeconds: 222 }),
+              ...rest.slice(0, 49).map((video, index) =>
+                expect.objectContaining({ assetId: video.id, positionSeconds: index + 1 }),
+              ),
+            ],
+          },
+        }),
+      );
+      expect(result).toEqual({ assetId: openedVideo.id, positionSeconds: 222 });
+    });
+
+    it('should clear playback position when the updated position is zero', async () => {
+      const video = AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id });
+
+      mocks.user.getMetadata.mockResolvedValueOnce([
+        {
+          key: UserMetadataKey.VideoPlayback,
+          value: {
+            entries: [{ assetId: video.id, positionSeconds: 45, updatedAt: '2026-04-15T11:00:00.000Z' }],
+          },
+        },
+      ]);
+      mocks.asset.getById.mockResolvedValue(getForAsset(video));
+
+      await expect(
+        sut.updateMyVideoPlayback(authStub.admin, { assetId: video.id, positionSeconds: 0 }),
+      ).resolves.toEqual({
+        assetId: video.id,
+        positionSeconds: null,
+      });
+      expect(mocks.user.deleteMetadata).toHaveBeenCalledWith(authStub.admin.user.id, UserMetadataKey.VideoPlayback);
+      expect(mocks.user.upsertMetadata).not.toHaveBeenCalled();
+    });
+
+    it('should reject non-video assets when updating playback position', async () => {
+      const image = AssetFactory.create({ ownerId: authStub.admin.user.id });
+
+      mocks.asset.getById.mockResolvedValue(getForAsset(image));
+
+      await expect(
+        sut.updateMyVideoPlayback(authStub.admin, { assetId: image.id, positionSeconds: 12 }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(mocks.user.upsertMetadata).not.toHaveBeenCalled();
+    });
+  });
+
   describe('createProfileImage', () => {
     it('should throw an error if the user does not exist', async () => {
       const file = { path: '/profile/path' } as Express.Multer.File;

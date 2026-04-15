@@ -24,6 +24,7 @@ import { RecentVideoUpdateDto } from 'src/dtos/recent-video.dto';
 import { UserPreferencesResponseDto, UserPreferencesUpdateDto } from 'src/dtos/user-preferences.dto';
 import { CreateProfileImageDto, CreateProfileImageResponseDto } from 'src/dtos/user-profile.dto';
 import { UserAdminResponseDto, UserResponseDto, UserUpdateMeDto } from 'src/dtos/user.dto';
+import { VideoPlaybackResponseDto, VideoPlaybackUpdateDto } from 'src/dtos/video-playback.dto';
 import { ApiTag, Permission, RouteKey } from 'src/enum';
 import { Auth, Authenticated, FileResponse } from 'src/middleware/auth.guard';
 import { FileUploadInterceptor } from 'src/middleware/file-upload.interceptor';
@@ -118,6 +119,28 @@ export class UserController {
   })
   updateMyRecentVideos(@Auth() auth: AuthDto, @Body() dto: RecentVideoUpdateDto): Promise<AssetResponseDto[]> {
     return this.service.updateMyRecentVideos(auth, dto);
+  }
+
+  @Get('me/video-playback/:id')
+  @Authenticated({ permission: Permission.UserPreferenceRead })
+  @Endpoint({
+    summary: 'Get my video playback position',
+    description: 'Retrieve the saved playback position for a video for the current user.',
+    history: new HistoryBuilder().added('v3.0.0').alpha('v3.0.0'),
+  })
+  getMyVideoPlayback(@Auth() auth: AuthDto, @Param() { id }: UUIDParamDto): Promise<VideoPlaybackResponseDto> {
+    return this.service.getMyVideoPlayback(auth, id);
+  }
+
+  @Put('me/video-playback')
+  @Authenticated({ permission: Permission.UserPreferenceUpdate })
+  @Endpoint({
+    summary: 'Update my video playback position',
+    description: 'Save or clear the playback position for a video for the current user.',
+    history: new HistoryBuilder().added('v3.0.0').alpha('v3.0.0'),
+  })
+  updateMyVideoPlayback(@Auth() auth: AuthDto, @Body() dto: VideoPlaybackUpdateDto): Promise<VideoPlaybackResponseDto> {
+    return this.service.updateMyVideoPlayback(auth, dto);
   }
 
   @Get('me/license')

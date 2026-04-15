@@ -2838,6 +2838,18 @@ export type RecentVideoUpdateDto = {
     /** The asset ID for the video to move to the front of the recent videos list */
     assetId: string;
 };
+export type VideoPlaybackUpdateDto = {
+    /** The asset ID for the video playback position to update */
+    assetId: string;
+    /** Playback position in whole seconds. Use 0 to clear saved progress. */
+    positionSeconds: number;
+};
+export type VideoPlaybackResponseDto = {
+    /** The asset ID for the playback position response */
+    assetId: string;
+    /** Saved playback position in whole seconds, or null if none is stored. */
+    positionSeconds?: number | null;
+};
 export type CreateProfileImageDto = {
     /** Profile image file */
     file: Blob;
@@ -6736,6 +6748,34 @@ export function updateMyRecentVideos({ recentVideoUpdateDto }: {
     })));
 }
 /**
+ * Update my video playback position
+ */
+export function updateMyVideoPlayback({ videoPlaybackUpdateDto }: {
+    videoPlaybackUpdateDto: VideoPlaybackUpdateDto;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: VideoPlaybackResponseDto;
+    }>("/users/me/video-playback", oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body: videoPlaybackUpdateDto
+    })));
+}
+/**
+ * Get my video playback position
+ */
+export function getMyVideoPlayback({ id }: {
+    id: string;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: VideoPlaybackResponseDto;
+    }>(`/users/me/video-playback/${encodeURIComponent(id)}`, {
+        ...opts
+    }));
+}
+/**
  * Delete user profile image
  */
 export function deleteProfileImage(opts?: Oazapfts.RequestOpts) {
@@ -7444,5 +7484,6 @@ export enum UserMetadataKey {
     Preferences = "preferences",
     License = "license",
     Onboarding = "onboarding",
-    RecentVideos = "recent-videos"
+    RecentVideos = "recent-videos",
+    VideoPlayback = "video-playback"
 }

@@ -12,6 +12,7 @@ import { RecentVideoUpdateDto } from 'src/dtos/recent-video.dto';
 import { UserPreferencesResponseDto, UserPreferencesUpdateDto, mapPreferences } from 'src/dtos/user-preferences.dto';
 import { CreateProfileImageResponseDto } from 'src/dtos/user-profile.dto';
 import { UserAdminResponseDto, UserResponseDto, UserUpdateMeDto, mapUser, mapUserAdmin } from 'src/dtos/user.dto';
+import { VideoPlaybackResponseDto, VideoPlaybackUpdateDto } from 'src/dtos/video-playback.dto';
 import { AssetType, CacheControl, JobName, JobStatus, Permission, QueueName, StorageFolder, UserMetadataKey } from 'src/enum';
 import { UserFindOptions } from 'src/repositories/user.repository';
 import { UserTable } from 'src/schema/tables/user.table';
@@ -21,6 +22,7 @@ import { ImmichFileResponse } from 'src/utils/file';
 import { getPreferences, getPreferencesPartial, mergePreferences } from 'src/utils/preferences';
 
 const RECENT_VIDEO_LIMIT = 5;
+const VIDEO_PLAYBACK_LIMIT = 50;
 
 @Injectable()
 export class UserService extends BaseService {
@@ -113,6 +115,40 @@ export class UserService extends BaseService {
     });
 
     return this.getRecentVideoAssets(auth, assetIds);
+  }
+
+  async getMyVideoPlayback(auth: AuthDto, assetId: string): Promise<VideoPlaybackResponseDto> {
+    await this.requireVideoPlaybackAccess(auth, assetId);
+
+    const entry = (await this.getVideoPlaybackEntries(auth.user.id)).find((item) => item.assetId === assetId);
+    return { assetId, positionSeconds: entry?.positionSeconds ?? null };
+  }
+
+  async updateMyVideoPlayback(auth: AuthDto, dto: VideoPlaybackUpdateDto): Promise<VideoPlaybackResponseDto> {
+    await this.requireVideoPlaybackAccess(auth, dto.assetId);
+
+    const entries =
+      dto.positionSeconds === 0
+        ? (await this.getVideoPlaybackEntries(auth.user.id)).filter((entry) => entry.assetId !== dto.assetId)
+        : [
+            {
+              assetId: dto.assetId,
+              positionSeconds: dto.positionSeconds,
+              updatedAt: new Date().toISOString(),
+            },
+            ...(await this.getVideoPlaybackEntries(auth.user.id)).filter((entry) => entry.assetId !== dto.assetId),
+          ].slice(0, VIDEO_PLAYBACK_LIMIT);
+
+    if (entries.length === 0) {
+      await this.userRepository.deleteMetadata(auth.user.id, UserMetadataKey.VideoPlayback);
+    } else {
+      await this.userRepository.upsertMetadata(auth.user.id, {
+        key: UserMetadataKey.VideoPlayback,
+        value: { entries },
+      });
+    }
+
+    return { assetId: dto.assetId, positionSeconds: dto.positionSeconds === 0 ? null : dto.positionSeconds };
   }
 
   async get(id: string): Promise<UserResponseDto> {
@@ -273,6 +309,33 @@ export class UserService extends BaseService {
       .map((assetId) => assetById.get(assetId))
       .filter((asset): asset is NonNullable<(typeof assets)[number]> => !!asset)
       .map((asset) => mapAsset(asset, { auth }));
+  }
+
+  private async requireVideoPlaybackAccess(auth: AuthDto, assetId: string): Promise<void> {
+    await this.requireAccess({ auth, permission: Permission.AssetRead, ids: [assetId] });
+
+    const asset = await this.assetRepository.getById(assetId);
+    if (!asset || asset.deletedAt || asset.type !== AssetType.Video) {
+      throw new BadRequestException('Not found or not a video asset');
+    }
+  }
+
+  private async getVideoPlaybackEntries(
+    userId: string,
+  ): Promise<Array<{ assetId: string; positionSeconds: number; updatedAt: string }>> {
+    const metadata = await this.userRepository.getMetadata(userId);
+    const item = metadata.find(
+      (entry): entry is UserMetadataItem<UserMetadataKey.VideoPlayback> => entry.key === UserMetadataKey.VideoPlayback,
+    );
+
+    return (item?.value.entries ?? []).filter(
+      (entry): entry is { assetId: string; positionSeconds: number; updatedAt: string } =>
+        !!entry &&
+        typeof entry.assetId === 'string' &&
+        Number.isInteger(entry.positionSeconds) &&
+        entry.positionSeconds > 0 &&
+        typeof entry.updatedAt === 'string',
+    );
   }
 
   @OnJob({ name: JobName.UserSyncUsage, queue: QueueName.BackgroundTask })

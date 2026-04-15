@@ -330,6 +330,7 @@ export enum UserMetadataKey {
   License = 'license',
   Onboarding = 'onboarding',
   RecentVideos = 'recent-videos',
+  VideoPlayback = 'video-playback',
 }
 
 export enum AssetMetadataKey {

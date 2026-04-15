@@ -186,6 +186,60 @@ describe(UserService.name, () => {
       mocks.access.asset.checkPartnerAccess.mockResolvedValue(new Set());
     });
 
+    it('should return saved playback positions in metadata order for accessible videos', async () => {
+      const first = AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id });
+      const second = AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id });
+
+      mocks.user.getMetadata.mockResolvedValue([
+        {
+          key: UserMetadataKey.VideoPlayback,
+          value: {
+            entries: [
+              { assetId: second.id, positionSeconds: 89, updatedAt: '2026-04-15T11:31:00.000Z' },
+              { assetId: first.id, positionSeconds: 137, updatedAt: '2026-04-15T11:30:00.000Z' },
+            ],
+          },
+        },
+      ]);
+      mocks.asset.getByIdsWithAllRelationsButStacks.mockResolvedValue([getForAsset(first), getForAsset(second)]);
+
+      await expect(sut.getMyVideoPlaybacks(authStub.admin)).resolves.toEqual([
+        { assetId: second.id, positionSeconds: 89 },
+        { assetId: first.id, positionSeconds: 137 },
+      ]);
+    });
+
+    it('should drop inaccessible, deleted, and non-video playback entries from the bulk response', async () => {
+      const accessibleVideo = AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id });
+      const deletedVideo = AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id });
+      const image = AssetFactory.create({ ownerId: authStub.admin.user.id });
+      const inaccessibleVideo = AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id });
+
+      mocks.user.getMetadata.mockResolvedValue([
+        {
+          key: UserMetadataKey.VideoPlayback,
+          value: {
+            entries: [
+              { assetId: accessibleVideo.id, positionSeconds: 89, updatedAt: '2026-04-15T11:31:00.000Z' },
+              { assetId: deletedVideo.id, positionSeconds: 64, updatedAt: '2026-04-15T11:30:00.000Z' },
+              { assetId: image.id, positionSeconds: 37, updatedAt: '2026-04-15T11:29:00.000Z' },
+              { assetId: inaccessibleVideo.id, positionSeconds: 22, updatedAt: '2026-04-15T11:28:00.000Z' },
+            ],
+          },
+        },
+      ]);
+      mocks.access.asset.checkOwnerAccess.mockResolvedValueOnce(new Set([accessibleVideo.id, deletedVideo.id, image.id]));
+      mocks.asset.getByIdsWithAllRelationsButStacks.mockResolvedValue([
+        getForAsset(accessibleVideo),
+        getForAsset({ ...deletedVideo, deletedAt: new Date('2026-04-15T11:45:00.000Z') }),
+        getForAsset(image),
+      ]);
+
+      await expect(sut.getMyVideoPlaybacks(authStub.admin)).resolves.toEqual([
+        { assetId: accessibleVideo.id, positionSeconds: 89 },
+      ]);
+    });
+
     it('should return the saved playback position for a video', async () => {
       const video = AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id });
 

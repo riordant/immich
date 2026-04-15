@@ -25,7 +25,9 @@
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
   import { TimelineManager } from '$lib/managers/timeline-manager/timeline-manager.svelte';
   import { getAssetBulkActions } from '$lib/services/asset.service';
+  import { getVideoPlaybackPositions } from '$lib/services/video-playback.service';
   import { preferences } from '$lib/stores/user.store';
+  import { userInteraction } from '$lib/stores/user.svelte';
   import {
     updateStackedAssetInTimeline,
     updateUnstackedAssetInTimeline,
@@ -33,6 +35,8 @@
     type OnUnlink,
   } from '$lib/utils/actions';
   import { openFileUploadDialog } from '$lib/utils/file-uploader';
+  import { handleError } from '$lib/utils/handle-error';
+  import { getPlaybackProgressPercent } from '$lib/utils/video-playback';
   import { AssetTypeEnum, AssetVisibility } from '@immich/sdk';
   import { ActionButton, CommandPaletteDefaultProvider } from '@immich/ui';
   import { mdiDotsVertical } from '@mdi/js';
@@ -47,6 +51,7 @@
   };
 
   let selectedAssets = $derived(assetMultiSelectManager.assets);
+  const playbackPositions = $derived(userInteraction.videoPlaybackPositions ?? {});
   let isAssetStackSelected = $derived(selectedAssets.length === 1 && !!selectedAssets[0].stack);
   let isLinkActionAvailable = $derived.by(() => {
     const isLivePhoto = selectedAssets.length === 1 && !!selectedAssets[0].livePhotoVideoId;
@@ -82,6 +87,20 @@
     timelineManager.removeAssets(assetIds);
     assetMultiSelectManager.clear();
   };
+
+  const refreshVideoPlaybackPositions = async () => {
+    try {
+      await getVideoPlaybackPositions();
+    } catch (error) {
+      handleError(error, $t('failed_to_load_assets'));
+    }
+  };
+
+  $effect(() => {
+    if (userInteraction.videoPlaybackPositions === undefined) {
+      void refreshVideoPlaybackPositions();
+    }
+  });
 </script>
 
 <UserPageLayout hideNavbar={assetMultiSelectManager.selectionActive} title={$t('videos')} scrollbar={false}>
@@ -97,7 +116,13 @@
     <RecentVideos />
 
     {#snippet customThumbnailLayout(asset)}
-      <VideoTitleBand originalFileName={asset.originalFileName} />
+      <VideoTitleBand
+        originalFileName={asset.originalFileName}
+        progressPercent={getPlaybackProgressPercent({
+          duration: asset.duration,
+          positionSeconds: playbackPositions[asset.id],
+        })}
+      />
     {/snippet}
 
     {#snippet empty()}

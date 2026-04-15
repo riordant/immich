@@ -12,7 +12,7 @@ import { RecentVideoUpdateDto } from 'src/dtos/recent-video.dto';
 import { UserPreferencesResponseDto, UserPreferencesUpdateDto, mapPreferences } from 'src/dtos/user-preferences.dto';
 import { CreateProfileImageResponseDto } from 'src/dtos/user-profile.dto';
 import { UserAdminResponseDto, UserResponseDto, UserUpdateMeDto, mapUser, mapUserAdmin } from 'src/dtos/user.dto';
-import { VideoPlaybackResponseDto, VideoPlaybackUpdateDto } from 'src/dtos/video-playback.dto';
+import { VideoPlaybackEntryResponseDto, VideoPlaybackResponseDto, VideoPlaybackUpdateDto } from 'src/dtos/video-playback.dto';
 import { AssetType, CacheControl, JobName, JobStatus, Permission, QueueName, StorageFolder, UserMetadataKey } from 'src/enum';
 import { UserFindOptions } from 'src/repositories/user.repository';
 import { UserTable } from 'src/schema/tables/user.table';
@@ -115,6 +115,30 @@ export class UserService extends BaseService {
     });
 
     return this.getRecentVideoAssets(auth, assetIds);
+  }
+
+  async getMyVideoPlaybacks(auth: AuthDto): Promise<VideoPlaybackEntryResponseDto[]> {
+    const entries = await this.getVideoPlaybackEntries(auth.user.id);
+    if (entries.length === 0) {
+      return [];
+    }
+
+    const assetIds = entries.map((entry) => entry.assetId);
+    const allowedIds = await this.checkAccess({ auth, permission: Permission.AssetRead, ids: assetIds });
+    if (allowedIds.size === 0) {
+      return [];
+    }
+
+    const assets = await this.assetRepository.getByIdsWithAllRelationsButStacks(assetIds);
+    const validAssetIds = new Set(
+      assets
+        .filter((asset) => !asset.deletedAt && asset.type === AssetType.Video && allowedIds.has(asset.id))
+        .map((asset) => asset.id),
+    );
+
+    return entries
+      .filter((entry) => validAssetIds.has(entry.assetId))
+      .map(({ assetId, positionSeconds }) => ({ assetId, positionSeconds }));
   }
 
   async getMyVideoPlayback(auth: AuthDto, assetId: string): Promise<VideoPlaybackResponseDto> {

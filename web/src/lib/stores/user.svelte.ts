@@ -10,6 +10,7 @@ import type {
 interface UserInteractions {
   recentAlbums?: AlbumResponseDto[];
   recentVideos?: AssetResponseDto[];
+  videoPlaybackPositions?: Record<string, number>;
   versions?: ServerVersionHistoryResponseDto[];
   aboutInfo?: ServerAboutResponseDto;
   serverInfo?: ServerStorageResponseDto;
@@ -18,6 +19,7 @@ interface UserInteractions {
 const defaultUserInteraction: UserInteractions = {
   recentAlbums: undefined,
   recentVideos: undefined,
+  videoPlaybackPositions: undefined,
   versions: undefined,
   aboutInfo: undefined,
   serverInfo: undefined,

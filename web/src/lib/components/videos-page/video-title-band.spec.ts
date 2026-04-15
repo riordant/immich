@@ -15,4 +15,16 @@ describe('VideoTitleBand component', () => {
     const title = screen.getByText('clip.v1.final');
     expect(title).toHaveAttribute('title', 'clip.v1.final.mp4');
   });
+
+  it('renders a playback progress bar when progress is provided', () => {
+    render(VideoTitleBand, { originalFileName: 'Family Trip 2024.mov', progressPercent: 25 });
+
+    expect(screen.getByTestId('video-progress-bar')).toHaveStyle({ width: '25%' });
+  });
+
+  it('does not render a playback progress bar when progress is missing', () => {
+    render(VideoTitleBand, { originalFileName: 'Family Trip 2024.mov' });
+
+    expect(screen.queryByTestId('video-progress-bar')).not.toBeInTheDocument();
+  });
 });

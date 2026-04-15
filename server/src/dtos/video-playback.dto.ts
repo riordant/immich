@@ -28,3 +28,15 @@ export class VideoPlaybackResponseDto {
   })
   positionSeconds!: number | null;
 }
+
+export class VideoPlaybackEntryResponseDto {
+  @ValidateUUID({ description: 'The asset ID for the playback position entry' })
+  assetId!: string;
+
+  @ApiProperty({
+    type: 'integer',
+    description: 'Saved playback position in whole seconds.',
+    minimum: 1,
+  })
+  positionSeconds!: number;
+}

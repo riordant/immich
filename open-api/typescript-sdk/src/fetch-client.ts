@@ -2838,6 +2838,12 @@ export type RecentVideoUpdateDto = {
     /** The asset ID for the video to move to the front of the recent videos list */
     assetId: string;
 };
+export type VideoPlaybackEntryResponseDto = {
+    /** The asset ID for the playback position entry */
+    assetId: string;
+    /** Saved playback position in whole seconds. */
+    positionSeconds: number;
+};
 export type VideoPlaybackUpdateDto = {
     /** The asset ID for the video playback position to update */
     assetId: string;
@@ -6746,6 +6752,17 @@ export function updateMyRecentVideos({ recentVideoUpdateDto }: {
         method: "PUT",
         body: recentVideoUpdateDto
     })));
+}
+/**
+ * Get my video playback positions
+ */
+export function getMyVideoPlaybacks(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: VideoPlaybackEntryResponseDto[];
+    }>("/users/me/video-playback", {
+        ...opts
+    }));
 }
 /**
  * Update my video playback position

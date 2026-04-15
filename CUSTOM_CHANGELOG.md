@@ -30,3 +30,11 @@ This file tracks local product customizations made on top of upstream Immich.
 - Clear saved progress when a video ends or is within 5 seconds of completion so finished videos reopen from the start.
 - Limited persisted playback entries to a bounded per-user list to keep metadata size controlled for future continue-watching UI work.
 - Added targeted server and web tests covering playback persistence payloads and resume/clear threshold logic.
+
+### Videos section: stage 4
+
+- Added playback progress bars to video tiles in both the `Recent` shelf and the main Videos timeline.
+- Added a bulk `GET /users/me/video-playback` endpoint so the Videos page can load saved playback positions without per-thumbnail API requests.
+- Cached bulk playback positions in the existing web user-interaction store and kept that cache synchronized after viewer playback updates succeed.
+- Reused the existing video title-band overlay so the progress bar sits directly below the title without changing thumbnail layout structure.
+- Added targeted tests covering the new bulk playback API response, playback cache synchronization, progress-percentage calculation, and title-band rendering.

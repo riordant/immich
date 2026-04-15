@@ -1,3 +1,5 @@
+import { timeToSeconds } from '$lib/utils/date-time';
+
 export const PLAYBACK_SAVE_INTERVAL_MS = 5000;
 export const PLAYBACK_COMPLETE_THRESHOLD_SECONDS = 5;
 
@@ -36,4 +38,23 @@ export const clampResumePosition = ({
   }
 
   return Math.min(savedPositionSeconds, Math.max(durationSeconds - PLAYBACK_COMPLETE_THRESHOLD_SECONDS, 0));
+};
+
+export const getPlaybackProgressPercent = ({
+  duration,
+  positionSeconds,
+}: {
+  duration: string | null;
+  positionSeconds: number | null | undefined;
+}): number | null => {
+  if (!duration || !positionSeconds) {
+    return null;
+  }
+
+  const durationSeconds = timeToSeconds(duration);
+  if (!durationSeconds || !Number.isFinite(durationSeconds)) {
+    return null;
+  }
+
+  return Math.min((positionSeconds / durationSeconds) * 100, 100);
 };

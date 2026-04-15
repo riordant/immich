@@ -7,10 +7,12 @@
   import { navigate } from '$lib/utils/navigation';
   import { handleError } from '$lib/utils/handle-error';
   import { toTimelineAsset } from '$lib/utils/timeline-util';
+  import { getPlaybackProgressPercent } from '$lib/utils/video-playback';
   import { t } from 'svelte-i18n';
 
   const assets = $derived(userInteraction.recentVideos ?? []);
   const timelineAssets = $derived(assets.map((asset) => toTimelineAsset(asset)));
+  const playbackPositions = $derived(userInteraction.videoPlaybackPositions ?? {});
   const thumbnailHeight = $derived(mediaQueryManager.maxMd ? 100 : 235);
 
   const refreshRecentVideos = async () => {
@@ -36,6 +38,10 @@
       <div class="flex w-max gap-3 pb-1">
         {#each timelineAssets as asset (asset.id)}
           {@const thumbnailWidth = Math.max(Math.round(asset.ratio * thumbnailHeight), 1)}
+          {@const progressPercent = getPlaybackProgressPercent({
+            duration: asset.duration,
+            positionSeconds: playbackPositions[asset.id],
+          })}
           <div class="relative shrink-0" style:width={`${thumbnailWidth}px`} style:height={`${thumbnailHeight}px`}>
             <Thumbnail
               {asset}
@@ -44,7 +50,7 @@
               thumbnailHeight={thumbnailHeight}
               onClick={(asset) => void navigate({ targetRoute: 'current', assetId: asset.id })}
             />
-            <VideoTitleBand originalFileName={asset.originalFileName} />
+            <VideoTitleBand originalFileName={asset.originalFileName} {progressPercent} />
           </div>
         {/each}
       </div>

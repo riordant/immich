@@ -28,6 +28,7 @@ describe('RecentVideos component', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     userInteraction.recentVideos = undefined;
+    userInteraction.videoPlaybackPositions = undefined;
   });
 
   it('fetches recent videos and renders titles without extensions', async () => {
@@ -72,5 +73,19 @@ describe('RecentVideos component', () => {
     render(RecentVideos);
 
     expect(screen.getByRole('link')).toHaveStyle({ width: '470px', height: '235px' });
+  });
+
+  it('renders a playback progress bar for cached recent videos with saved progress', () => {
+    const watchedVideo = assetFactory.build({
+      type: AssetTypeEnum.Video,
+      originalFileName: 'Watched again.mkv',
+      duration: '00:02:00.000',
+    });
+    userInteraction.recentVideos = [watchedVideo];
+    userInteraction.videoPlaybackPositions = { [watchedVideo.id]: 30 };
+
+    render(RecentVideos);
+
+    expect(screen.getByTestId('video-progress-bar')).toHaveStyle({ width: '25%' });
   });
 });

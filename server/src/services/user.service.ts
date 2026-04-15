@@ -4,19 +4,23 @@ import { DateTime } from 'luxon';
 import { SALT_ROUNDS } from 'src/constants';
 import { StorageCore } from 'src/cores/storage.core';
 import { OnJob } from 'src/decorators';
+import { AssetResponseDto, mapAsset } from 'src/dtos/asset-response.dto';
 import { AuthDto } from 'src/dtos/auth.dto';
 import { LicenseKeyDto, LicenseResponseDto } from 'src/dtos/license.dto';
 import { OnboardingDto, OnboardingResponseDto } from 'src/dtos/onboarding.dto';
+import { RecentVideoUpdateDto } from 'src/dtos/recent-video.dto';
 import { UserPreferencesResponseDto, UserPreferencesUpdateDto, mapPreferences } from 'src/dtos/user-preferences.dto';
 import { CreateProfileImageResponseDto } from 'src/dtos/user-profile.dto';
 import { UserAdminResponseDto, UserResponseDto, UserUpdateMeDto, mapUser, mapUserAdmin } from 'src/dtos/user.dto';
-import { CacheControl, JobName, JobStatus, QueueName, StorageFolder, UserMetadataKey } from 'src/enum';
+import { AssetType, CacheControl, JobName, JobStatus, Permission, QueueName, StorageFolder, UserMetadataKey } from 'src/enum';
 import { UserFindOptions } from 'src/repositories/user.repository';
 import { UserTable } from 'src/schema/tables/user.table';
 import { BaseService } from 'src/services/base.service';
 import { JobOf, UserMetadataItem } from 'src/types';
 import { ImmichFileResponse } from 'src/utils/file';
 import { getPreferences, getPreferencesPartial, mergePreferences } from 'src/utils/preferences';
+
+const RECENT_VIDEO_LIMIT = 5;
 
 @Injectable()
 export class UserService extends BaseService {
@@ -83,6 +87,32 @@ export class UserService extends BaseService {
     });
 
     return mapPreferences(updated);
+  }
+
+  async getMyRecentVideos(auth: AuthDto): Promise<AssetResponseDto[]> {
+    const assetIds = await this.getRecentVideoIds(auth.user.id);
+    return this.getRecentVideoAssets(auth, assetIds);
+  }
+
+  async updateMyRecentVideos(auth: AuthDto, dto: RecentVideoUpdateDto): Promise<AssetResponseDto[]> {
+    await this.requireAccess({ auth, permission: Permission.AssetRead, ids: [dto.assetId] });
+
+    const asset = await this.assetRepository.getById(dto.assetId);
+    if (!asset || asset.deletedAt || asset.type !== AssetType.Video) {
+      throw new BadRequestException('Not found or not a video asset');
+    }
+
+    const assetIds = [dto.assetId, ...(await this.getRecentVideoIds(auth.user.id)).filter((id) => id !== dto.assetId)].slice(
+      0,
+      RECENT_VIDEO_LIMIT,
+    );
+
+    await this.userRepository.upsertMetadata(auth.user.id, {
+      key: UserMetadataKey.RecentVideos,
+      value: { ids: assetIds },
+    });
+
+    return this.getRecentVideoAssets(auth, assetIds);
   }
 
   async get(id: string): Promise<UserResponseDto> {
@@ -211,6 +241,38 @@ export class UserService extends BaseService {
     return {
       isOnboarded: onboarding.isOnboarded,
     };
+  }
+
+  private async getRecentVideoIds(userId: string): Promise<string[]> {
+    const metadata = await this.userRepository.getMetadata(userId);
+    const item = metadata.find(
+      (entry): entry is UserMetadataItem<UserMetadataKey.RecentVideos> => entry.key === UserMetadataKey.RecentVideos,
+    );
+
+    return [...new Set(item?.value.ids ?? [])].slice(0, RECENT_VIDEO_LIMIT);
+  }
+
+  private async getRecentVideoAssets(auth: AuthDto, assetIds: string[]): Promise<AssetResponseDto[]> {
+    if (assetIds.length === 0) {
+      return [];
+    }
+
+    const allowedIds = await this.checkAccess({ auth, permission: Permission.AssetRead, ids: assetIds });
+    if (allowedIds.size === 0) {
+      return [];
+    }
+
+    const assets = await this.assetRepository.getByIdsWithAllRelationsButStacks(assetIds);
+    const assetById = new Map(
+      assets
+        .filter((asset) => !asset.deletedAt && asset.type === AssetType.Video && allowedIds.has(asset.id))
+        .map((asset) => [asset.id, asset]),
+    );
+
+    return assetIds
+      .map((assetId) => assetById.get(assetId))
+      .filter((asset): asset is NonNullable<(typeof assets)[number]> => !!asset)
+      .map((asset) => mapAsset(asset, { auth }));
   }
 
   @OnJob({ name: JobName.UserSyncUsage, queue: QueueName.BackgroundTask })

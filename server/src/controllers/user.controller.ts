@@ -16,9 +16,11 @@ import {
 import { ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { NextFunction, Response } from 'express';
 import { Endpoint, HistoryBuilder } from 'src/decorators';
+import { AssetResponseDto } from 'src/dtos/asset-response.dto';
 import { AuthDto } from 'src/dtos/auth.dto';
 import { LicenseKeyDto, LicenseResponseDto } from 'src/dtos/license.dto';
 import { OnboardingDto, OnboardingResponseDto } from 'src/dtos/onboarding.dto';
+import { RecentVideoUpdateDto } from 'src/dtos/recent-video.dto';
 import { UserPreferencesResponseDto, UserPreferencesUpdateDto } from 'src/dtos/user-preferences.dto';
 import { CreateProfileImageDto, CreateProfileImageResponseDto } from 'src/dtos/user-profile.dto';
 import { UserAdminResponseDto, UserResponseDto, UserUpdateMeDto } from 'src/dtos/user.dto';
@@ -94,6 +96,28 @@ export class UserController {
     @Body() dto: UserPreferencesUpdateDto,
   ): Promise<UserPreferencesResponseDto> {
     return this.service.updateMyPreferences(auth, dto);
+  }
+
+  @Get('me/recent-videos')
+  @Authenticated({ permission: Permission.UserPreferenceRead })
+  @Endpoint({
+    summary: 'Get my recent videos',
+    description: 'Retrieve the most recently opened videos for the current user.',
+    history: new HistoryBuilder().added('v3.0.0').alpha('v3.0.0'),
+  })
+  getMyRecentVideos(@Auth() auth: AuthDto): Promise<AssetResponseDto[]> {
+    return this.service.getMyRecentVideos(auth);
+  }
+
+  @Put('me/recent-videos')
+  @Authenticated({ permission: Permission.UserPreferenceUpdate })
+  @Endpoint({
+    summary: 'Update my recent videos',
+    description: 'Move a video to the front of the recent videos list for the current user.',
+    history: new HistoryBuilder().added('v3.0.0').alpha('v3.0.0'),
+  })
+  updateMyRecentVideos(@Auth() auth: AuthDto, @Body() dto: RecentVideoUpdateDto): Promise<AssetResponseDto[]> {
+    return this.service.updateMyRecentVideos(auth, dto);
   }
 
   @Get('me/license')

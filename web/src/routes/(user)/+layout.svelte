@@ -1,4 +1,5 @@
 <script lang="ts">
+  import RecentVideoTracker from '$lib/components/videos-page/recent-video-tracker.svelte';
   import { page } from '$app/state';
   import UploadCover from '$lib/components/shared-components/drag-and-drop-upload-overlay.svelte';
   import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
@@ -22,6 +23,7 @@
   });
 </script>
 
+<RecentVideoTracker />
 <div class:display-none={assetViewerManager.isViewing}>
   {@render children?.()}
 </div>

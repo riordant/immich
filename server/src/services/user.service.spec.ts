@@ -1,13 +1,16 @@
 import { BadRequestException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { mapAsset } from 'src/dtos/asset-response.dto';
+import { AssetType, CacheControl, JobName, UserMetadataKey } from 'src/enum';
 import { UserAdmin } from 'src/database';
-import { CacheControl, JobName, UserMetadataKey } from 'src/enum';
 import { UserService } from 'src/services/user.service';
 import { ImmichFileResponse } from 'src/utils/file';
+import { AssetFactory } from 'test/factories/asset.factory';
 import { AuthFactory } from 'test/factories/auth.factory';
 import { UserFactory } from 'test/factories/user.factory';
 import { authStub } from 'test/fixtures/auth.stub';
 import { systemConfigStub } from 'test/fixtures/system-config.stub';
 import { userStub } from 'test/fixtures/user.stub';
+import { getForAsset } from 'test/mappers';
 import { newTestService, ServiceMocks } from 'test/utils';
 
 const makeDeletedAt = (daysAgo: number) => {
@@ -91,6 +94,88 @@ describe(UserService.name, () => {
         id: user.id,
         email: user.email,
       });
+    });
+  });
+
+  describe('recent videos', () => {
+    beforeEach(() => {
+      mocks.access.asset.checkOwnerAccess.mockImplementation(async (_userId, ids) => new Set(ids));
+      mocks.access.asset.checkAlbumAccess.mockResolvedValue(new Set());
+      mocks.access.asset.checkPartnerAccess.mockResolvedValue(new Set());
+    });
+
+    it('should return accessible videos in stored order', async () => {
+      const ownedVideo = AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id });
+      const sharedVideo = AssetFactory.create({ type: AssetType.Video, ownerId: userStub.user1.id });
+      const image = AssetFactory.create({ ownerId: authStub.admin.user.id });
+      const deletedVideo = AssetFactory.create({
+        type: AssetType.Video,
+        ownerId: authStub.admin.user.id,
+        deletedAt: new Date(),
+      });
+
+      mocks.user.getMetadata.mockResolvedValue([
+        { key: UserMetadataKey.RecentVideos, value: { ids: [ownedVideo.id, image.id, sharedVideo.id, deletedVideo.id] } },
+      ]);
+      mocks.access.asset.checkOwnerAccess.mockImplementation(async (_userId, ids) =>
+        new Set([...ids].filter((id) => id !== sharedVideo.id)),
+      );
+      mocks.access.asset.checkPartnerAccess.mockResolvedValue(new Set([sharedVideo.id]));
+      mocks.asset.getByIdsWithAllRelationsButStacks.mockResolvedValue(
+        [
+          getForAsset(image),
+          getForAsset(sharedVideo),
+          getForAsset(deletedVideo),
+          getForAsset(ownedVideo),
+        ] as any,
+      );
+
+      await expect(sut.getMyRecentVideos(authStub.admin)).resolves.toEqual([
+        mapAsset(getForAsset(ownedVideo), { auth: authStub.admin }),
+        mapAsset(getForAsset(sharedVideo), { auth: authStub.admin }),
+      ]);
+    });
+
+    it('should move a video to the front and cap the list to five items', async () => {
+      const recentVideos = [
+        AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id }),
+        AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id }),
+        AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id }),
+        AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id }),
+        AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id }),
+        AssetFactory.create({ type: AssetType.Video, ownerId: authStub.admin.user.id }),
+      ];
+      const [openedVideo, second, third, fourth, fifth, sixth] = recentVideos;
+
+      mocks.user.getMetadata.mockResolvedValueOnce([
+        {
+          key: UserMetadataKey.RecentVideos,
+          value: { ids: [second.id, third.id, fourth.id, fifth.id, sixth.id] },
+        },
+      ]);
+      mocks.asset.getById.mockResolvedValue(getForAsset(openedVideo));
+      mocks.asset.getByIdsWithAllRelationsButStacks.mockResolvedValue(
+        [openedVideo, second, third, fourth, fifth].map((asset) => getForAsset(asset)) as any,
+      );
+
+      const result = await sut.updateMyRecentVideos(authStub.admin, { assetId: openedVideo.id });
+
+      expect(mocks.user.upsertMetadata).toHaveBeenCalledWith(authStub.admin.user.id, {
+        key: UserMetadataKey.RecentVideos,
+        value: { ids: [openedVideo.id, second.id, third.id, fourth.id, fifth.id] },
+      });
+      expect(result.map(({ id }) => id)).toEqual([openedVideo.id, second.id, third.id, fourth.id, fifth.id]);
+    });
+
+    it('should reject non-video assets when updating recent videos', async () => {
+      const image = AssetFactory.create({ ownerId: authStub.admin.user.id });
+
+      mocks.asset.getById.mockResolvedValue(getForAsset(image));
+
+      await expect(sut.updateMyRecentVideos(authStub.admin, { assetId: image.id })).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(mocks.user.upsertMetadata).not.toHaveBeenCalled();
     });
   });
 

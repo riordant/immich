@@ -60,6 +60,7 @@ describe('getAltText', () => {
       const asset: TimelineAsset = {
         id: 'test-id',
         ownerId: 'test-owner',
+        originalFileName: 'test-file.jpg',
         ratio: 1,
         thumbhash: null,
         fileCreatedAt: {

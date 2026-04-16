@@ -5,7 +5,7 @@ import { authManager } from '$lib/managers/auth-manager.svelte';
 import { eventManager } from '$lib/managers/event-manager.svelte';
 import AssetAddToAlbumModal from '$lib/modals/AssetAddToAlbumModal.svelte';
 import AssetTagModal from '$lib/modals/AssetTagModal.svelte';
-import SharedLinkCreateModal from '$lib/modals/SharedLinkCreateModal.svelte';
+import { handleAssetShareLinkAction, toMobileShareAsset } from '$lib/services/mobile-share-link.service';
 import { user as authUser, preferences } from '$lib/stores/user.store';
 import { getAssetMediaUrl, getSharedLink, sleep } from '$lib/utils';
 import { downloadUrl } from '$lib/utils/asset-utils';
@@ -104,7 +104,7 @@ export const getAssetActions = ($t: MessageFormatter, asset: AssetResponseDto) =
     icon: mdiShareVariantOutline,
     type: $t('assets'),
     $if: () => !!(currentAuthUser && !asset.isTrashed && asset.visibility !== AssetVisibility.Locked),
-    onAction: () => modalManager.show(SharedLinkCreateModal, { assetIds: [asset.id] }),
+    onAction: () => handleAssetShareLinkAction({ assetIds: [asset.id], assets: [toMobileShareAsset(asset)] }),
   };
 
   const Download: ActionItem = {

@@ -23,15 +23,29 @@ vitest.mock('$lib/utils/i18n', () => ({
 vitest.mock('@immich/sdk');
 
 vitest.mock('$lib/utils', async () => {
-  const originalModule = await vitest.importActual('$lib/utils');
+const originalModule = await vitest.importActual('$lib/utils');
   return {
     ...originalModule,
     sleep: vitest.fn(),
   };
 });
 
+const { handleAssetShareLinkActionMock, toMobileShareAssetMock } = vitest.hoisted(() => ({
+  handleAssetShareLinkActionMock: vitest.fn(),
+  toMobileShareAssetMock: vitest.fn((asset) => ({ originalFileName: asset.originalFileName, type: asset.type })),
+}));
+
+vitest.mock('$lib/services/mobile-share-link.service', () => ({
+  handleAssetShareLinkAction: handleAssetShareLinkActionMock,
+  toMobileShareAsset: toMobileShareAssetMock,
+}));
+
 describe('AssetService', () => {
   describe('getAssetActions', () => {
+    beforeEach(() => {
+      vitest.clearAllMocks();
+    });
+
     it('should allow shared link downloads if the user owns the asset and shared link downloads are disabled', () => {
       const ownerId = 'owner';
       const user = userAdminFactory.build({ id: ownerId });
@@ -57,6 +71,21 @@ describe('AssetService', () => {
       setSharedLink(sharedLinkFactory.build({ allowDownload: true }));
       const assetActions = getAssetActions(() => '', asset);
       expect(assetActions.SharedLinkDownload.$if?.()).toStrictEqual(true);
+    });
+
+    it('should route asset share through the mobile share-link service', async () => {
+      const ownerId = 'owner';
+      const user = userAdminFactory.build({ id: ownerId });
+      const asset = assetFactory.build({ ownerId });
+      userStore.set(user);
+
+      const assetActions = getAssetActions(() => '', asset);
+      await assetActions.Share.onAction?.(undefined as never);
+
+      expect(handleAssetShareLinkActionMock).toHaveBeenCalledWith({
+        assetIds: [asset.id],
+        assets: [{ originalFileName: asset.originalFileName, type: asset.type }],
+      });
     });
   });
 

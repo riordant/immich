@@ -38,3 +38,15 @@ This file tracks local product customizations made on top of upstream Immich.
 - Cached bulk playback positions in the existing web user-interaction store and kept that cache synchronized after viewer playback updates succeed.
 - Reused the existing video title-band overlay so the progress bar sits directly below the title without changing thumbnail layout structure.
 - Added targeted tests covering the new bulk playback API response, playback cache synchronization, progress-percentage calculation, and title-band rendering.
+
+## 2026-04-16
+
+### Mobile web native share-to-link
+
+- Replaced the asset `Share` action on supported mobile browsers with a native Web Share flow that shares an Immich public link instead of file data.
+- Replaced the timeline multi-select share action with the same mobile-native share-link flow, while keeping the existing desktop modal behavior unchanged.
+- Added pragmatic mobile gating based on `navigator.share`, secure context, coarse pointer input, and Android/iOS-style browser platform detection.
+- Reused Immich's existing public shared-link infrastructure and default settings, creating a new link on each mobile share action without adding backend share types.
+- Added custom share text so single videos share as `"{user_name} has shared this movie: {movie_name} from their Immich Vault:"` and all other cases share as `"{user_name} has shared these memories from their Immich Vault:"`.
+- Kept cancel behavior silent and fell back to clipboard copy for unexpected native-share failures, reusing the existing clipboard toast/error handling.
+- Added targeted web tests for capability gating, share-message generation, mobile share-link service behavior, and multi-select/single-asset action wiring.

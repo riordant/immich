@@ -1,12 +1,15 @@
 <script lang="ts">
   import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
-  import SharedLinkCreateModal from '$lib/modals/SharedLinkCreateModal.svelte';
-  import { IconButton, modalManager } from '@immich/ui';
+  import { handleAssetShareLinkAction, toMobileShareAsset } from '$lib/services/mobile-share-link.service';
+  import { IconButton } from '@immich/ui';
   import { mdiShareVariantOutline } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
   const handleClick = async () => {
-    await modalManager.show(SharedLinkCreateModal, { assetIds: assetMultiSelectManager.assets.map(({ id }) => id) });
+    await handleAssetShareLinkAction({
+      assetIds: assetMultiSelectManager.assets.map(({ id }) => id),
+      assets: assetMultiSelectManager.assets.map((asset) => toMobileShareAsset(asset)),
+    });
   };
 </script>
 

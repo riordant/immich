@@ -1,11 +1,7 @@
 #
-# WARNING: To install Immich, follow our guide: https://docs.immich.app/install/docker-compose
+# Custom Immich production compose for Keepsake
+# Built from your modified source tree, reverse-proxied by nginx on :8445
 #
-# Make sure to use the docker-compose.yml of the current release:
-#
-# https://github.com/immich-app/immich/releases/latest/download/docker-compose.yml
-#
-# The compose file on main may not be compatible with the latest release.
 
 name: immich-prod
 
@@ -13,19 +9,17 @@ services:
   immich-server:
     container_name: immich_server
     image: immich-server:latest
-    # extends:
-    #   file: hwaccel.transcoding.yml
-    #   service: cpu # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
     build:
       context: ../
       dockerfile: server/Dockerfile
     volumes:
-      - ${UPLOAD_LOCATION}/photos:/data
+      - ${UPLOAD_LOCATION}/immich:/data                  # Immich data directory
+      - ${UPLOAD_LOCATION}/userdata:/external/userdata   # Custom users data directory
       - /etc/localtime:/etc/localtime:ro
     env_file:
       - .env
     ports:
-      - 2283:2283
+      - 127.0.0.1:2283:2283
     depends_on:
       - redis
       - database
@@ -36,16 +30,11 @@ services:
   immich-machine-learning:
     container_name: immich_machine_learning
     image: immich-machine-learning:latest
-    # extends:
-    #   file: hwaccel.ml.yml
-    #   service: cpu # set to one of [armnn, cuda, rocm, openvino, openvino-wsl, rknn] for accelerated inference
     build:
       context: ../machine-learning
       dockerfile: Dockerfile
       args:
-        - DEVICE=cpu # set to one of [armnn, cuda, rocm, openvino, openvino-wsl, rknn] for accelerated inference
-    ports:
-      - 3003:3003
+        - DEVICE=cpu
     volumes:
       - model-cache:/cache
     env_file:
@@ -72,36 +61,12 @@ services:
       POSTGRES_DB: ${DB_DATABASE_NAME}
       POSTGRES_INITDB_ARGS: '--data-checksums'
     volumes:
-      - ${UPLOAD_LOCATION}/postgres:/var/lib/postgresql/data
-    ports:
-      - 5432:5432
+      - ${DB_DATA_LOCATION}:/var/lib/postgresql/data
     shm_size: 128mb
     restart: always
     healthcheck:
       disable: false
 
-  # set IMMICH_TELEMETRY_INCLUDE=all in .env to enable metrics
-  immich-prometheus:
-    container_name: immich_prometheus
-    ports:
-      - 9090:9090
-    image: prom/prometheus@sha256:dda13e28bf95a5e5ca5b8ed56852006094c1c8e8871d9c9dbeed30aa6e55271f
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data:/prometheus
-
-  # first login uses admin/admin
-  # add data source for http://immich-prometheus:9090 to get started
-  immich-grafana:
-    container_name: immich_grafana
-    command: ['./run.sh', '-disable-reporting']
-    ports:
-      - 3000:3000
-    image: grafana/grafana:12.4.2-ubuntu@sha256:78839fe49e1425c02416fa8072591533a72bd9598e563b54a07d78f9e27fb5d3
-    volumes:
-      - grafana-data:/var/lib/grafana
-
 volumes:
   model-cache:
-  prometheus-data:
-  grafana-data:
+

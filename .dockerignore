@@ -39,3 +39,7 @@ server/src/queries
 server/www/
 
 web/.svelte-kit
+
+**/*.tsbuildinfo
+**/dist
+

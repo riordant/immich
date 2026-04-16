@@ -34,3 +34,7 @@ vite.config.js.timestamp-*
 .codex
 .playwright-mcp/*
 TASKS.txt
+
+**/*.tsbuildinfo
+dist/
+

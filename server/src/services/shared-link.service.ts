@@ -11,9 +11,11 @@ import {
   SharedLinkResponseDto,
   SharedLinkSearchDto,
 } from 'src/dtos/shared-link.dto';
-import { Permission, SharedLinkType } from 'src/enum';
+import { AssetType, Permission, SharedLinkType } from 'src/enum';
 import { BaseService } from 'src/services/base.service';
 import { getExternalDomain, OpenGraphTags } from 'src/utils/misc';
+
+const stripFileExtension = (originalFileName: string) => originalFileName.replace(/\.[^/.]+$/, '');
 
 @Injectable()
 export class SharedLinkService extends BaseService {
@@ -228,16 +230,40 @@ export class SharedLinkService extends BaseService {
 
     const config = await this.getConfig({ withCache: true });
     const sharedLink = await this.findOrFail(auth.sharedLink.userId, auth.sharedLink.id);
-    const assetId = sharedLink.album?.albumThumbnailAssetId || sharedLink.assets[0]?.id;
     const assetCount = sharedLink.assets.length > 0 ? sharedLink.assets.length : sharedLink.album?.assets?.length || 0;
-    const imagePath = assetId
-      ? `/api/assets/${assetId}/thumbnail?key=${sharedLink.key.toString('base64url')}`
-      : '/feature-panel.png';
+    const externalDomain = getExternalDomain(config.server, defaultDomain);
+    const sharePath = sharedLink.slug ? `/s/${sharedLink.slug}` : `/share/${sharedLink.key.toString('base64url')}`;
+    const previewAsset =
+      sharedLink.album?.assets.find((asset) => asset.id === sharedLink.album?.albumThumbnailAssetId) ||
+      sharedLink.album?.assets[0] ||
+      sharedLink.assets[0];
+
+    const imagePath = previewAsset ? `/api/assets/${previewAsset.id}/thumbnail?key=${sharedLink.key.toString('base64url')}` : '/feature-panel.png';
+    const sharerName = sharedLink.album?.owner?.name || (await this.userRepository.get(sharedLink.userId, {}))?.name || 'Someone';
+
+    let title: string;
+    if (sharedLink.album) {
+      title = `${sharerName} shared album: ${sharedLink.album.albumName} with you`;
+    } else if (assetCount === 1 && previewAsset?.type === AssetType.Video) {
+      const movieName = stripFileExtension(previewAsset.originalFileName) || previewAsset.originalFileName;
+      title = `${sharerName} shared a movie: ${movieName} with you`;
+    } else if (assetCount === 1) {
+      title = `${sharerName} shared a photo with you`;
+    } else {
+      title = `${sharerName} shared memories with you`;
+    }
+
+    const description = sharedLink.description || sharedLink.album?.description || 'View on Immich';
 
     return {
-      title: sharedLink.album ? sharedLink.album.albumName : 'Public Share',
-      description: sharedLink.description || `${assetCount} shared photos & videos`,
-      imageUrl: new URL(imagePath, getExternalDomain(config.server, defaultDomain)).href,
+      title,
+      description,
+      url: new URL(sharePath, externalDomain).href,
+      siteName: 'Immich',
+      imageUrl: new URL(imagePath, externalDomain).href,
+      imageAlt: title,
+      imageWidth: previewAsset?.width ?? undefined,
+      imageHeight: previewAsset?.height ?? undefined,
     };
   }
 

@@ -9,7 +9,14 @@ import { SharedLinkService } from 'src/services/shared-link.service';
 import { OpenGraphTags } from 'src/utils/misc';
 
 export const render = (index: string, meta: OpenGraphTags) => {
-  const [title, description, imageUrl] = [meta.title, meta.description, meta.imageUrl].map((item) =>
+  const [title, description, url, siteName, imageUrl, imageAlt] = [
+    meta.title,
+    meta.description,
+    meta.url,
+    meta.siteName,
+    meta.imageUrl,
+    meta.imageAlt,
+  ].map((item) =>
     item ? sanitizeHtml(item, { allowedTags: [] }) : '',
   );
 
@@ -20,14 +27,20 @@ export const render = (index: string, meta: OpenGraphTags) => {
     <meta property="og:type" content="website" />
     <meta property="og:title" content="${title}" />
     <meta property="og:description" content="${description}" />
+    ${url ? `<meta property="og:url" content="${url}" />` : ''}
+    ${siteName ? `<meta property="og:site_name" content="${siteName}" />` : ''}
     ${imageUrl ? `<meta property="og:image" content="${imageUrl}" />` : ''}
+    ${imageAlt ? `<meta property="og:image:alt" content="${imageAlt}" />` : ''}
+    ${meta.imageWidth ? `<meta property="og:image:width" content="${meta.imageWidth}" />` : ''}
+    ${meta.imageHeight ? `<meta property="og:image:height" content="${meta.imageHeight}" />` : ''}
 
     <!-- Twitter Meta Tags -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${title}" />
     <meta name="twitter:description" content="${description}" />
-
-    ${imageUrl ? `<meta name="twitter:image" content="${imageUrl}" />` : ''}`;
+    ${url ? `<meta name="twitter:url" content="${url}" />` : ''}
+    ${imageUrl ? `<meta name="twitter:image" content="${imageUrl}" />` : ''}
+    ${imageAlt ? `<meta name="twitter:image:alt" content="${imageAlt}" />` : ''}`;
 
   return index.replace('<!-- metadata:tags -->', tags);
 };

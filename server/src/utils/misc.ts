@@ -112,7 +112,12 @@ export const handlePromiseError = <T>(promise: Promise<T>, logger: LoggingReposi
 export interface OpenGraphTags {
   title: string;
   description: string;
+  url?: string;
+  siteName?: string;
   imageUrl?: string;
+  imageAlt?: string;
+  imageWidth?: number;
+  imageHeight?: number;
 }
 
 function cleanModelName(modelName: string): string {

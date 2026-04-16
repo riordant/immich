@@ -1,11 +1,12 @@
 import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { AssetIdErrorReason } from 'src/dtos/asset-ids.response.dto';
 import { mapSharedLink } from 'src/dtos/shared-link.dto';
-import { SharedLinkType } from 'src/enum';
+import { AssetType, SharedLinkType } from 'src/enum';
 import { SharedLinkService } from 'src/services/shared-link.service';
 import { AlbumFactory } from 'test/factories/album.factory';
 import { AssetFactory } from 'test/factories/asset.factory';
 import { SharedLinkFactory } from 'test/factories/shared-link.factory';
+import { UserFactory } from 'test/factories/user.factory';
 import { authStub } from 'test/fixtures/auth.stub';
 import { sharedLinkStub } from 'test/fixtures/shared-link.stub';
 import { getForSharedLink } from 'test/mappers';
@@ -369,27 +370,100 @@ describe(SharedLinkService.name, () => {
       expect(mocks.sharedLink.get).not.toHaveBeenCalled();
     });
 
-    it('should return metadata tags', async () => {
+    it('should return metadata tags for a single video', async () => {
       const sharedLink = SharedLinkFactory.from({ description: null })
-        .asset({}, (builder) => builder.exif())
+        .asset({ type: AssetType.Video, originalFileName: 'Our Holiday.mp4', width: 1920, height: 1080 }, (builder) =>
+          builder.exif(),
+        )
         .build();
+      mocks.user.get.mockResolvedValue(UserFactory.create({ id: sharedLink.userId, name: 'Ava' }));
       mocks.sharedLink.get.mockResolvedValue(getForSharedLink(sharedLink));
 
       await expect(sut.getMetadataTags(authStub.adminSharedLink)).resolves.toEqual({
-        description: '1 shared photos & videos',
+        description: 'View on Immich',
         imageUrl: `https://my.immich.app/api/assets/${sharedLink.assets[0].id}/thumbnail?key=${sharedLink.key.toString('base64url')}`,
-        title: 'Public Share',
+        imageAlt: 'Ava shared a movie: Our Holiday with you',
+        imageHeight: 1080,
+        imageWidth: 1920,
+        siteName: 'Immich',
+        title: 'Ava shared a movie: Our Holiday with you',
+        url: `https://my.immich.app/share/${sharedLink.key.toString('base64url')}`,
       });
 
       expect(mocks.sharedLink.get).toHaveBeenCalled();
     });
 
+    it('should return metadata tags for a single photo', async () => {
+      const sharedLink = SharedLinkFactory.from({ description: null })
+        .asset({}, (builder) => builder.exif())
+        .build();
+      mocks.user.get.mockResolvedValue(UserFactory.create({ id: sharedLink.userId, name: 'Ava' }));
+      mocks.sharedLink.get.mockResolvedValue(getForSharedLink(sharedLink));
+
+      await expect(sut.getMetadataTags(authStub.adminSharedLink)).resolves.toEqual({
+        description: 'View on Immich',
+        imageUrl: `https://my.immich.app/api/assets/${sharedLink.assets[0].id}/thumbnail?key=${sharedLink.key.toString('base64url')}`,
+        imageAlt: 'Ava shared a photo with you',
+        imageHeight: undefined,
+        imageWidth: undefined,
+        siteName: 'Immich',
+        title: 'Ava shared a photo with you',
+        url: `https://my.immich.app/share/${sharedLink.key.toString('base64url')}`,
+      });
+    });
+
+    it('should return metadata tags for multiple assets', async () => {
+      const sharedLink = SharedLinkFactory.from({ description: null })
+        .asset({}, (builder) => builder.exif())
+        .asset({}, (builder) => builder.exif())
+        .build();
+      mocks.user.get.mockResolvedValue(UserFactory.create({ id: sharedLink.userId, name: 'Ava' }));
+      mocks.sharedLink.get.mockResolvedValue(getForSharedLink(sharedLink));
+
+      await expect(sut.getMetadataTags(authStub.adminSharedLink)).resolves.toEqual({
+        description: 'View on Immich',
+        imageUrl: `https://my.immich.app/api/assets/${sharedLink.assets[0].id}/thumbnail?key=${sharedLink.key.toString('base64url')}`,
+        imageAlt: 'Ava shared memories with you',
+        imageHeight: undefined,
+        imageWidth: undefined,
+        siteName: 'Immich',
+        title: 'Ava shared memories with you',
+        url: `https://my.immich.app/share/${sharedLink.key.toString('base64url')}`,
+      });
+    });
+
+    it('should return metadata tags for an album', async () => {
+      const sharedLink = SharedLinkFactory.from({ description: null })
+        .album({ albumName: 'Summer 2025', description: 'Our best week away' }, (builder) => builder.asset())
+        .build();
+      mocks.sharedLink.get.mockResolvedValue(getForSharedLink(sharedLink));
+
+      await expect(sut.getMetadataTags(authStub.adminSharedLink)).resolves.toEqual({
+        description: 'Our best week away',
+        imageUrl: `https://my.immich.app/api/assets/${sharedLink.album?.assets[0].id}/thumbnail?key=${sharedLink.key.toString('base64url')}`,
+        imageAlt: `${sharedLink.album?.owner.name} shared album: Summer 2025 with you`,
+        imageHeight: undefined,
+        imageWidth: undefined,
+        siteName: 'Immich',
+        title: `${sharedLink.album?.owner.name} shared album: Summer 2025 with you`,
+        url: `https://my.immich.app/share/${sharedLink.key.toString('base64url')}`,
+      });
+
+      expect(mocks.user.get).not.toHaveBeenCalled();
+    });
+
     it('should return metadata tags with a default image path if the asset id is not set', async () => {
       mocks.sharedLink.get.mockResolvedValue({ ...sharedLinkStub.individual, album: null, assets: [] });
+      mocks.user.get.mockResolvedValue(UserFactory.create({ id: authStub.adminSharedLink.sharedLink?.userId, name: 'Ava' }));
       await expect(sut.getMetadataTags(authStub.adminSharedLink)).resolves.toEqual({
-        description: '0 shared photos & videos',
+        description: 'View on Immich',
         imageUrl: `https://my.immich.app/feature-panel.png`,
-        title: 'Public Share',
+        imageAlt: 'Ava shared memories with you',
+        imageHeight: undefined,
+        imageWidth: undefined,
+        siteName: 'Immich',
+        title: 'Ava shared memories with you',
+        url: `https://my.immich.app/share/${sharedLinkStub.individual.key.toString('base64url')}`,
       });
 
       expect(mocks.sharedLink.get).toHaveBeenCalled();

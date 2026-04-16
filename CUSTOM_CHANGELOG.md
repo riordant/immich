@@ -50,3 +50,16 @@ This file tracks local product customizations made on top of upstream Immich.
 - Added custom share text so single videos share as `"{user_name} has shared this movie: {movie_name} from their Immich Vault:"` and all other cases share as `"{user_name} has shared these memories from their Immich Vault:"`.
 - Kept cancel behavior silent and fell back to clipboard copy for unexpected native-share failures, reusing the existing clipboard toast/error handling.
 - Added targeted web tests for capability gating, share-message generation, mobile share-link service behavior, and multi-select/single-asset action wiring.
+
+### Shared-link chat previews
+
+- Upgraded public share-link Open Graph and Twitter metadata on the server-rendered share HTML so chat apps can show richer link previews.
+- Reused the existing album cover / first shared asset thumbnail as the preview image instead of generating new preview media.
+- Added trust-building preview copy:
+  - single video: `"{user} shared a movie: {movie_name} with you"`
+  - single photo: `"{user} shared a photo with you"`
+  - multiple assets: `"{user} shared memories with you"`
+  - album: `"{user} shared album: {album_name} with you"`
+- Added `og:url`, `og:site_name`, `og:image:alt`, `og:image:width`, `og:image:height`, `twitter:url`, and `twitter:image:alt` for public share pages.
+- Kept password-protected shared links on the existing no-preview path to avoid leaking preview metadata before authentication.
+- Added targeted server tests for the shared-link metadata generator and HTML renderer.

@@ -31,11 +31,20 @@ const resetRecentAlbums = () => {
   userInteraction.recentAlbums = undefined;
 };
 
+const updateRecentVideos = (asset: AssetResponseDto) => {
+  if (!userInteraction.recentVideos) {
+    return;
+  }
+
+  userInteraction.recentVideos = userInteraction.recentVideos.map((video) => (video.id === asset.id ? asset : video));
+};
+
 const reset = () => {
   Object.assign(userInteraction, defaultUserInteraction);
 };
 
 eventManager.on({
+  AssetUpdate: (asset) => updateRecentVideos(asset),
   AlbumCreate: () => resetRecentAlbums(),
   AlbumUpdate: () => resetRecentAlbums(),
   AlbumDelete: () => resetRecentAlbums(),

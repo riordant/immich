@@ -22,7 +22,8 @@
   import { getJustifiedLayoutFromAssets } from '$lib/utils/layout-utils';
   import { navigate } from '$lib/utils/navigation';
   import { isTimelineAsset, toTimelineAsset } from '$lib/utils/timeline-util';
-  import { AssetVisibility, type AssetResponseDto } from '@immich/sdk';
+  import VideoTitleBand from '$lib/components/videos-page/video-title-band.svelte';
+  import { AssetTypeEnum, AssetVisibility, type AssetResponseDto } from '@immich/sdk';
   import { modalManager } from '@immich/ui';
   import { debounce } from 'lodash-es';
   import { t } from 'svelte-i18n';
@@ -36,6 +37,7 @@
     viewport: Viewport;
     onIntersected?: (() => void) | undefined;
     showAssetName?: boolean;
+    showVideoTitleBand?: boolean;
     onReload?: (() => void) | undefined;
     pageHeaderOffset?: number;
     slidingWindowOffset?: number;
@@ -52,6 +54,7 @@
     viewport,
     onIntersected = undefined,
     showAssetName = false,
+    showVideoTitleBand = false,
     onReload = undefined,
     slidingWindowOffset = 0,
     pageHeaderOffset = 0,
@@ -385,6 +388,9 @@
             thumbnailWidth={geometry.getWidth(i)}
             thumbnailHeight={geometry.getHeight(i)}
           />
+          {#if showVideoTitleBand && !isTimelineAsset(asset) && asset.type === AssetTypeEnum.Video}
+            <VideoTitleBand originalFileName={asset.originalFileName} title={asset.exifInfo?.description} />
+          {/if}
           {#if showAssetName && !isTimelineAsset(asset)}
             <div
               class="absolute text-center p-1 text-xs font-mono font-semibold w-full bottom-0 bg-linear-to-t bg-slate-50/75 dark:bg-slate-800/75 overflow-clip text-ellipsis whitespace-pre-wrap"

@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { shortcuts } from '$lib/actions/shortcut';
+  import OrientationControls from '$lib/components/asset-viewer/editor/transform-tool/orientation-controls.svelte';
   import { transformManager } from '$lib/managers/edit/transform-manager.svelte';
-  import { Button, HStack, IconButton } from '@immich/ui';
-  import { mdiFlipHorizontal, mdiFlipVertical, mdiRotateLeft, mdiRotateRight } from '@mdi/js';
+  import { Button, HStack } from '@immich/ui';
   import { t } from 'svelte-i18n';
 
   interface AspectRatioOption {
@@ -69,47 +68,8 @@
   }
 </script>
 
-<svelte:document
-  use:shortcuts={[
-    { shortcut: { key: ']' }, onShortcut: () => rotateImage(90) },
-    { shortcut: { key: '[' }, onShortcut: () => rotateImage(-90) },
-  ]}
-/>
-
 <div class="mt-3 px-4">
-  <div class="flex h-10 w-full items-center justify-between text-sm mt-2">
-    <h2>{$t('editor_orientation')}</h2>
-  </div>
-  <HStack>
-    <IconButton
-      class="w-full"
-      size="small"
-      aria-label={$t('editor_rotate_left')}
-      icon={mdiRotateLeft}
-      onclick={() => rotateImage(-90)}
-    />
-    <IconButton
-      class="w-full"
-      size="small"
-      aria-label={$t('editor_rotate_right')}
-      icon={mdiRotateRight}
-      onclick={() => rotateImage(90)}
-    />
-    <IconButton
-      class="w-full"
-      size="small"
-      aria-label={$t('editor_flip_horizontal')}
-      icon={mdiFlipHorizontal}
-      onclick={() => mirrorImage('horizontal')}
-    />
-    <IconButton
-      class="w-full"
-      size="small"
-      aria-label={$t('editor_flip_vertical')}
-      icon={mdiFlipVertical}
-      onclick={() => mirrorImage('vertical')}
-    />
-  </HStack>
+  <OrientationControls onRotate={rotateImage} onMirror={mirrorImage} />
 
   <div class="flex h-10 w-full items-center justify-between text-sm mt-6">
     <h2>{$t('crop')}</h2>

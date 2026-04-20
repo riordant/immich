@@ -3,7 +3,9 @@ import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manage
 import { assetViewerManager } from '$lib/managers/asset-viewer-manager.svelte';
 import { authManager } from '$lib/managers/auth-manager.svelte';
 import { eventManager } from '$lib/managers/event-manager.svelte';
+import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
 import AssetAddToAlbumModal from '$lib/modals/AssetAddToAlbumModal.svelte';
+import AssetSelectionEditModal from '$lib/modals/AssetSelectionEditModal.svelte';
 import AssetTagModal from '$lib/modals/AssetTagModal.svelte';
 import { handleAssetShareLinkAction, toMobileShareAsset } from '$lib/services/mobile-share-link.service';
 import { user as authUser, preferences } from '$lib/stores/user.store';
@@ -48,6 +50,19 @@ import {
 import type { MessageFormatter } from 'svelte-i18n';
 import { get } from 'svelte/store';
 
+const unsupportedEditorExtensions = ['gif', 'svg', 'insp'];
+
+const hasUnsupportedEditorExtension = (filename: string) => {
+  const lowerCaseName = filename.toLowerCase();
+  return unsupportedEditorExtensions.some((extension) => lowerCaseName.endsWith(`.${extension}`));
+};
+
+const canEditTimelineAsset = (asset: TimelineAsset) =>
+  asset.isImage &&
+  !asset.livePhotoVideoId &&
+  asset.projectionType !== ProjectionType.EQUIRECTANGULAR &&
+  !hasUnsupportedEditorExtension(asset.originalFileName);
+
 export const getAssetBulkActions = ($t: MessageFormatter) => {
   const ownedAssets = assetMultiSelectManager.ownedAssets;
   const assetIds = ownedAssets.map((asset) => asset.id);
@@ -63,6 +78,17 @@ export const getAssetBulkActions = ($t: MessageFormatter) => {
     icon: mdiPlus,
     shortcuts: [{ key: 'l' }],
     onAction: () => modalManager.show(AssetAddToAlbumModal, { assetIds }),
+  };
+
+  const Edit: ActionItem = {
+    title: $t('editor'),
+    icon: mdiTune,
+    shortcuts: [{ key: 'e' }],
+    $if: () =>
+      assetMultiSelectManager.isAllUserOwned &&
+      ownedAssets.length > 0 &&
+      ownedAssets.every((asset) => canEditTimelineAsset(asset)),
+    onAction: () => modalManager.show(AssetSelectionEditModal, { assets: ownedAssets }),
   };
 
   const RefreshFacesJob: ActionItem = {
@@ -90,7 +116,7 @@ export const getAssetBulkActions = ($t: MessageFormatter) => {
     $if: () => isAllVideos,
   };
 
-  return { AddToAlbum, RefreshFacesJob, RefreshMetadataJob, RegenerateThumbnailJob, TranscodeVideoJob };
+  return { AddToAlbum, Edit, RefreshFacesJob, RefreshMetadataJob, RegenerateThumbnailJob, TranscodeVideoJob };
 };
 
 export const getAssetActions = ($t: MessageFormatter, asset: AssetResponseDto) => {

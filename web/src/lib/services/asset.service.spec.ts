@@ -1,10 +1,11 @@
-import { getAssetActions, handleDownloadAsset } from '$lib/services/asset.service';
+import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manager.svelte';
+import { getAssetActions, getAssetBulkActions, handleDownloadAsset } from '$lib/services/asset.service';
 import { user as userStore } from '$lib/stores/user.store';
 import { setSharedLink } from '$lib/utils';
 import { getFormatter } from '$lib/utils/i18n';
 import { getAssetInfo } from '@immich/sdk';
 import { toastManager } from '@immich/ui';
-import { assetFactory } from '@test-data/factories/asset-factory';
+import { assetFactory, timelineAssetFactory } from '@test-data/factories/asset-factory';
 import { sharedLinkFactory } from '@test-data/factories/shared-link-factory';
 import { userAdminFactory } from '@test-data/factories/user-factory';
 import { vitest } from 'vitest';
@@ -41,6 +42,10 @@ vitest.mock('$lib/services/mobile-share-link.service', () => ({
 }));
 
 describe('AssetService', () => {
+  beforeEach(() => {
+    assetMultiSelectManager.clear();
+  });
+
   describe('getAssetActions', () => {
     beforeEach(() => {
       vitest.clearAllMocks();
@@ -86,6 +91,51 @@ describe('AssetService', () => {
         assetIds: [asset.id],
         assets: [{ originalFileName: asset.originalFileName, type: asset.type }],
       });
+    });
+  });
+
+  describe('getAssetBulkActions', () => {
+    it('shows bulk Edit for editable image selections', () => {
+      const ownerId = 'owner';
+      userStore.set(userAdminFactory.build({ id: ownerId }));
+      assetMultiSelectManager.selectAssets([
+        timelineAssetFactory.build({
+          ownerId,
+          isImage: true,
+          isVideo: false,
+          livePhotoVideoId: null,
+          projectionType: null,
+          originalFileName: 'first.jpg',
+        }),
+        timelineAssetFactory.build({
+          ownerId,
+          isImage: true,
+          isVideo: false,
+          livePhotoVideoId: null,
+          projectionType: null,
+          originalFileName: 'second.png',
+        }),
+      ]);
+
+      const actions = getAssetBulkActions(() => '');
+      expect(actions.Edit.$if?.()).toBe(true);
+    });
+
+    it('hides bulk Edit for unsupported selections', () => {
+      const ownerId = 'owner';
+      userStore.set(userAdminFactory.build({ id: ownerId }));
+      assetMultiSelectManager.selectAssets([
+        timelineAssetFactory.build({
+          ownerId,
+          isImage: false,
+          isVideo: true,
+          livePhotoVideoId: null,
+          originalFileName: 'clip.mp4',
+        }),
+      ]);
+
+      const actions = getAssetBulkActions(() => '');
+      expect(actions.Edit.$if?.()).toBe(false);
     });
   });
 

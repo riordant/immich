@@ -19,6 +19,7 @@ export type TimelineAsset = {
   id: string;
   ownerId: string;
   originalFileName: string;
+  description?: string | null;
   tags?: string[];
   ratio: number;
   thumbhash: string | null;

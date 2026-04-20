@@ -126,6 +126,7 @@
       <CreateSharedLink />
       <SelectAllAssets {timelineManager} assetInteraction={assetMultiSelectManager} />
       <ActionButton action={Actions.AddToAlbum} />
+      <ActionButton action={Actions.Edit} />
 
       {#if assetMultiSelectManager.isAllUserOwned}
         <FavoriteAction

@@ -25454,6 +25454,14 @@
             },
             "type": "array"
           },
+          "description": {
+            "description": "Array of asset descriptions extracted from EXIF/user metadata",
+            "items": {
+              "nullable": true,
+              "type": "string"
+            },
+            "type": "array"
+          },
           "duration": {
             "description": "Array of video durations in HH:MM:SS format (null for images)",
             "items": {
@@ -25589,6 +25597,7 @@
         "required": [
           "city",
           "country",
+          "description",
           "duration",
           "fileCreatedAt",
           "id",

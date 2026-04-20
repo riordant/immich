@@ -349,6 +349,7 @@
       />
 
       <ActionButton action={Actions.AddToAlbum} />
+      <ActionButton action={Actions.Edit} />
 
       <FavoriteAction removeFavorite={assetMultiSelectManager.isAllFavorite} />
 

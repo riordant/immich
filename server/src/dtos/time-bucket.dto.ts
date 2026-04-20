@@ -213,6 +213,13 @@ export class TimeBucketAssetResponseDto {
 
   @ApiProperty({
     type: 'array',
+    items: { type: 'string', nullable: true },
+    description: 'Array of asset descriptions extracted from EXIF/user metadata',
+  })
+  description!: (string | null)[];
+
+  @ApiProperty({
+    type: 'array',
     required: false,
     items: { type: 'number', nullable: true },
     description: 'Array of latitude coordinates extracted from EXIF GPS data',

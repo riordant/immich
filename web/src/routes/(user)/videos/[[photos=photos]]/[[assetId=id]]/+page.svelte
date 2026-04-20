@@ -118,6 +118,7 @@
     {#snippet customThumbnailLayout(asset)}
       <VideoTitleBand
         originalFileName={asset.originalFileName}
+        title={asset.description}
         progressPercent={getPlaybackProgressPercent({
           duration: asset.duration,
           positionSeconds: playbackPositions[asset.id],
@@ -139,6 +140,7 @@
     <CreateSharedLink />
     <SelectAllAssets {timelineManager} assetInteraction={assetMultiSelectManager} />
     <ActionButton action={Actions.AddToAlbum} />
+    <ActionButton action={Actions.Edit} />
 
     {#if assetMultiSelectManager.isAllUserOwned}
       <FavoriteAction

@@ -37,4 +37,4 @@ TASKS.txt
 
 **/*.tsbuildinfo
 dist/
-
+scripts/.env

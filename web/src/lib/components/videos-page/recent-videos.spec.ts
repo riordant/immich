@@ -1,6 +1,7 @@
 import { getIntersectionObserverMock } from '$lib/__mocks__/intersection-observer.mock';
 import { sdkMock } from '$lib/__mocks__/sdk.mock';
 import RecentVideos from '$lib/components/videos-page/recent-videos.svelte';
+import { eventManager } from '$lib/managers/event-manager.svelte';
 import { userInteraction } from '$lib/stores/user.svelte';
 import { AssetTypeEnum } from '@immich/sdk';
 import { assetFactory } from '@test-data/factories/asset-factory';
@@ -33,7 +34,11 @@ describe('RecentVideos component', () => {
 
   it('fetches recent videos and renders titles without extensions', async () => {
     const recentVideos = [
-      assetFactory.build({ type: AssetTypeEnum.Video, originalFileName: 'Newest clip.mov' }),
+      assetFactory.build({
+        type: AssetTypeEnum.Video,
+        originalFileName: 'Newest clip.mov',
+        exifInfo: { description: 'Newest title' },
+      }),
       assetFactory.build({ type: AssetTypeEnum.Video, originalFileName: 'Older clip.mp4' }),
     ];
 
@@ -43,8 +48,8 @@ describe('RecentVideos component', () => {
 
     await waitFor(() => expect(sdkMock.getMyRecentVideos).toHaveBeenCalledTimes(1));
 
-    const titles = screen.getAllByText(/clip$/);
-    expect(titles.map((title) => title.textContent)).toEqual(['Newest clip', 'Older clip']);
+    expect(screen.getByText('Newest title')).toBeInTheDocument();
+    expect(screen.getByText('Older clip')).toBeInTheDocument();
   });
 
   it('uses cached recent videos without refetching and opens items in the current route', async () => {
@@ -87,5 +92,26 @@ describe('RecentVideos component', () => {
     render(RecentVideos);
 
     expect(screen.getByTestId('video-progress-bar')).toHaveStyle({ width: '25%' });
+  });
+
+  it('updates cached recent video titles when an AssetUpdate event is emitted', async () => {
+    const cachedVideo = assetFactory.build({
+      id: 'video-a',
+      type: AssetTypeEnum.Video,
+      originalFileName: 'Watched again.mkv',
+      exifInfo: { description: 'Original Title' },
+    });
+    userInteraction.recentVideos = [cachedVideo];
+
+    render(RecentVideos);
+
+    expect(screen.getByText('Original Title')).toBeInTheDocument();
+
+    eventManager.emit('AssetUpdate', {
+      ...cachedVideo,
+      exifInfo: { ...cachedVideo.exifInfo, description: 'Updated Title' },
+    });
+
+    await waitFor(() => expect(screen.getByText('Updated Title')).toBeInTheDocument());
   });
 });

@@ -179,6 +179,7 @@ export class TimelineMonth {
       const timelineAsset: TimelineAsset = {
         city: bucketAssets.city[i],
         country: bucketAssets.country[i],
+        description: bucketAssets.description[i],
         duration: bucketAssets.duration[i],
         id: bucketAssets.id[i],
         visibility: bucketAssets.visibility[i],

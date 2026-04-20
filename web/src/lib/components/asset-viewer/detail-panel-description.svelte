@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { eventManager } from '$lib/managers/event-manager.svelte';
   import { shortcut } from '$lib/actions/shortcut';
   import { handleError } from '$lib/utils/handle-error';
   import { updateAsset, type AssetResponseDto } from '@immich/sdk';
@@ -21,7 +22,8 @@
       return;
     }
     try {
-      await updateAsset({ id: asset.id, updateAssetDto: { description } });
+      const updatedAsset = await updateAsset({ id: asset.id, updateAssetDto: { description } });
+      eventManager.emit('AssetUpdate', updatedAsset);
       toastManager.primary($t('asset_description_updated'));
     } catch (error) {
       handleError(error, $t('cannot_update_the_description'));

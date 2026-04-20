@@ -2771,6 +2771,8 @@ export type TimeBucketAssetResponseDto = {
     city: (string | null)[];
     /** Array of country names extracted from EXIF GPS data */
     country: (string | null)[];
+    /** Array of asset descriptions extracted from EXIF/user metadata */
+    description: (string | null)[];
     /** Array of video durations in HH:MM:SS format (null for images) */
     duration: (string | null)[];
     /** Array of file creation timestamps in UTC */

@@ -1,5 +1,5 @@
 import type { EditActions } from '$lib/managers/edit/edit-manager.svelte';
-import type { MirrorParameters, RotateParameters } from '@immich/sdk';
+import { AssetEditAction, MirrorAxis, type MirrorParameters, type RotateParameters } from '@immich/sdk';
 import { compose, flipX, flipY, identity, rotate } from 'transformation-matrix';
 
 const isCloseToZero = (x: number, epsilon: number = 1e-15) => Math.abs(x) < epsilon;
@@ -19,6 +19,48 @@ export const normalizeTransformEdits = (
     mirrorHorizontal: false,
     mirrorVertical: isCloseToZero(a) ? b === c : a === -d,
   };
+};
+
+export const normalizedTransformToEdits = ({
+  rotation,
+  mirrorHorizontal,
+  mirrorVertical,
+}: {
+  rotation: number;
+  mirrorHorizontal: boolean;
+  mirrorVertical: boolean;
+}): EditActions => {
+  const edits: EditActions = [];
+
+  if (mirrorHorizontal) {
+    edits.push({
+      action: AssetEditAction.Mirror,
+      parameters: { axis: MirrorAxis.Horizontal },
+    });
+  }
+
+  if (mirrorVertical) {
+    edits.push({
+      action: AssetEditAction.Mirror,
+      parameters: { axis: MirrorAxis.Vertical },
+    });
+  }
+
+  if (rotation !== 0) {
+    edits.push({
+      action: AssetEditAction.Rotate,
+      parameters: { angle: rotation },
+    });
+  }
+
+  return edits;
+};
+
+export const mergeTransformEdits = (existingEdits: EditActions, nextTransformEdits: EditActions): EditActions => {
+  const cropEdits = existingEdits.filter((edit) => edit.action === AssetEditAction.Crop);
+  const transformEdits = existingEdits.filter((edit) => edit.action !== AssetEditAction.Crop);
+  const mergedTransforms = normalizeTransformEdits([...transformEdits, ...nextTransformEdits]);
+  return [...cropEdits, ...normalizedTransformToEdits(mergedTransforms)];
 };
 
 export const buildAffineFromEdits = (edits: EditActions) =>

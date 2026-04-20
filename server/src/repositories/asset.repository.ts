@@ -776,6 +776,7 @@ export class AssetRepository {
             eb.fn('encode', ['asset.thumbhash', sql.lit('base64')]).as('thumbhash'),
             'asset_exif.city',
             'asset_exif.country',
+            'asset_exif.description',
             'asset_exif.projectionType',
             eb.fn
               .coalesce(
@@ -860,6 +861,7 @@ export class AssetRepository {
           .select((eb) => [
             eb.fn.coalesce(eb.fn('array_agg', ['city']), sql.lit('{}')).as('city'),
             eb.fn.coalesce(eb.fn('array_agg', ['country']), sql.lit('{}')).as('country'),
+            eb.fn.coalesce(eb.fn('array_agg', ['description']), sql.lit('{}')).as('description'),
             eb.fn.coalesce(eb.fn('array_agg', ['duration']), sql.lit('{}')).as('duration'),
             eb.fn.coalesce(eb.fn('array_agg', ['id']), sql.lit('{}')).as('id'),
             eb.fn.coalesce(eb.fn('array_agg', ['visibility']), sql.lit('{}')).as('visibility'),

@@ -171,6 +171,7 @@ export const toTimelineAsset = (unknownAsset: AssetResponseDto | TimelineAsset):
     id: assetResponse.id,
     ownerId: assetResponse.ownerId,
     originalFileName: assetResponse.originalFileName,
+    description: assetResponse.exifInfo?.description ?? null,
     tags: assetResponse.tags?.map((tag) => tag.id),
     ratio,
     thumbhash: assetResponse.thumbhash,

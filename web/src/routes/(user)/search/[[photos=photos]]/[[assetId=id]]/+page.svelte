@@ -332,6 +332,7 @@
             onclick={handleSelectAll}
           />
           <ActionButton action={Actions.AddToAlbum} />
+          <ActionButton action={Actions.Edit} />
           {#if assetMultiSelectManager.isAllUserOwned}
             <FavoriteAction
               removeFavorite={assetMultiSelectManager.isAllFavorite}

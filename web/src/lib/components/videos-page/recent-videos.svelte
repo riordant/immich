@@ -50,7 +50,7 @@
               thumbnailHeight={thumbnailHeight}
               onClick={(asset) => void navigate({ targetRoute: 'current', assetId: asset.id })}
             />
-            <VideoTitleBand originalFileName={asset.originalFileName} {progressPercent} />
+            <VideoTitleBand originalFileName={asset.originalFileName} title={asset.description} {progressPercent} />
           </div>
         {/each}
       </div>

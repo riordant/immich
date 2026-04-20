@@ -1,39 +1,8 @@
 import type { EditActions } from '$lib/managers/edit/edit-manager.svelte';
-import { buildAffineFromEdits, normalizeTransformEdits } from '$lib/utils/editor';
+import { buildAffineFromEdits, mergeTransformEdits, normalizeTransformEdits, normalizedTransformToEdits } from '$lib/utils/editor';
 import { AssetEditAction, MirrorAxis } from '@immich/sdk';
 
-type NormalizedParameters = {
-  rotation: number;
-  mirrorHorizontal: boolean;
-  mirrorVertical: boolean;
-};
-
-function normalizedToEdits(params: NormalizedParameters): EditActions {
-  const edits: EditActions = [];
-
-  if (params.mirrorHorizontal) {
-    edits.push({
-      action: AssetEditAction.Mirror,
-      parameters: { axis: MirrorAxis.Horizontal },
-    });
-  }
-
-  if (params.mirrorVertical) {
-    edits.push({
-      action: AssetEditAction.Mirror,
-      parameters: { axis: MirrorAxis.Vertical },
-    });
-  }
-
-  if (params.rotation !== 0) {
-    edits.push({
-      action: AssetEditAction.Rotate,
-      parameters: { angle: params.rotation },
-    });
-  }
-
-  return edits;
-}
+const normalizedToEdits = normalizedTransformToEdits;
 
 function compareEditAffines(editsA: EditActions, editsB: EditActions): boolean {
   const normA = buildAffineFromEdits(editsA);
@@ -322,5 +291,30 @@ describe('edit normalization', () => {
     const normalizedEdits = normalizedToEdits(result);
 
     expect(compareEditAffines(normalizedEdits, edits)).toBe(true);
+  });
+
+  it('preserves existing crop edits when merging new transform edits', () => {
+    const existingEdits: EditActions = [
+      {
+        action: AssetEditAction.Crop,
+        parameters: { x: 10, y: 20, width: 100, height: 80 },
+      },
+      {
+        action: AssetEditAction.Rotate,
+        parameters: { angle: 90 },
+      },
+    ];
+
+    const merged = mergeTransformEdits(existingEdits, [
+      { action: AssetEditAction.Mirror, parameters: { axis: MirrorAxis.Horizontal } },
+    ]);
+
+    expect(merged[0]).toEqual(existingEdits[0]);
+    expect(
+      compareEditAffines(merged.slice(1), [
+        { action: AssetEditAction.Rotate, parameters: { angle: 90 } },
+        { action: AssetEditAction.Mirror, parameters: { axis: MirrorAxis.Horizontal } },
+      ]),
+    ).toBe(true);
   });
 });

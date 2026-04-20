@@ -3,6 +3,19 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/svelte';
 
 describe('VideoTitleBand component', () => {
+  it('renders the provided title when available', () => {
+    render(VideoTitleBand, { originalFileName: 'Family Trip 2024.mov', title: 'Best Day Ever' });
+
+    const title = screen.getByText('Best Day Ever');
+    expect(title).toHaveAttribute('title', 'Best Day Ever');
+  });
+
+  it('falls back to the filename without the extension when the title is missing', () => {
+    render(VideoTitleBand, { originalFileName: 'Family Trip 2024.mov', title: null });
+
+    expect(screen.getByText('Family Trip 2024')).toBeInTheDocument();
+  });
+
   it('renders the filename without the extension', () => {
     render(VideoTitleBand, { originalFileName: 'Family Trip 2024.mov' });
 
@@ -11,6 +24,13 @@ describe('VideoTitleBand component', () => {
 
   it('preserves dots in the base filename', () => {
     render(VideoTitleBand, { originalFileName: 'clip.v1.final.mp4' });
+
+    const title = screen.getByText('clip.v1.final');
+    expect(title).toHaveAttribute('title', 'clip.v1.final.mp4');
+  });
+
+  it('falls back to the filename when the provided title is blank', () => {
+    render(VideoTitleBand, { originalFileName: 'clip.v1.final.mp4', title: '   ' });
 
     const title = screen.getByText('clip.v1.final');
     expect(title).toHaveAttribute('title', 'clip.v1.final.mp4');

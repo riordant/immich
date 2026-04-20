@@ -30,6 +30,20 @@ describe('Image component', () => {
     expect(onStart).toHaveBeenCalledOnce();
   });
 
+  it('updates the rendered src when the prop changes', async () => {
+    const onStart = vi.fn();
+    const { baseElement, rerender } = render(Image, { src: '/test.jpg', onStart });
+    const img = baseElement.querySelector('img')!;
+    expect(img.getAttribute('src')).toBe('/test.jpg');
+
+    await rerender({ src: '/updated.jpg', onStart });
+
+    const updatedImg = baseElement.querySelector('img')!;
+    expect(updatedImg.getAttribute('src')).toBe('/updated.jpg');
+    expect(onStart).toHaveBeenCalledTimes(2);
+    expect(cancelImageUrl).toHaveBeenCalledWith('/test.jpg');
+  });
+
   it('calls onLoad when image loads', async () => {
     const onLoad = vi.fn();
     const { baseElement } = render(Image, { src: '/test.jpg', onLoad });

@@ -44,6 +44,7 @@
     <CommandPaletteDefaultProvider name={$t('assets')} actions={Object.values(Actions)} />
     <CreateSharedLink />
     <ActionButton action={Actions.AddToAlbum} />
+    <ActionButton action={Actions.Edit} />
     <DownloadAction />
   </AssetSelectControlBar>
 {:else}

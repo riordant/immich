@@ -32,7 +32,7 @@
 
 {#if timelineAssets.length > 0}
   <section class="px-2 pt-2 pb-4">
-    <h2 class="mb-3 text-sm font-semibold text-gray-500 dark:text-gray-400">{$t('recent')}</h2>
+    <h2 class="mb-3 text-lg font-medium text-black dark:text-white">Continue Watching</h2>
 
     <div class="scrollbar-hidden overflow-x-auto overflow-y-hidden">
       <div class="flex w-max gap-3 pb-1">

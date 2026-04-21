@@ -103,7 +103,7 @@
   });
 </script>
 
-<UserPageLayout hideNavbar={assetMultiSelectManager.selectionActive} title={$t('videos')} scrollbar={false}>
+<UserPageLayout hideNavbar={assetMultiSelectManager.selectionActive} scrollbar={false}>
   <Timeline
     enableRouting={true}
     bind:timelineManager

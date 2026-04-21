@@ -122,3 +122,20 @@ This file tracks local product customizations made on top of upstream Immich.
 
 - Updated the bulk editor modal to compose `Modal`/`ModalBody`/`ModalFooter` directly instead of `FormModal`, so its `Save` action can use the same `Button loading={...}` spinner treatment as the single-asset editor.
 - Added a focused modal test proving the bulk editor shows the loading spinner and disables the save button while edits are in flight.
+
+### Videos default landing and page chrome
+
+- Changed the generic authenticated landing route from `/photos` to `/videos`, including the root app redirect and the default post-login / post-onboarding / post-password-change fallbacks.
+- Updated the generic non-admin fallback redirect to `/videos` as well, so the default library home is consistent when no more specific destination is available.
+- Removed the explicit `Videos` header bar from the `/videos` page by matching the same `UserPageLayout` usage as `/photos`.
+
+### Videos shelf label tweak
+
+- Renamed the top shelf label on `/videos` from `Recent` to `Continue Watching`.
+- The current font sizing for that label is controlled directly in [web/src/lib/components/videos-page/recent-videos.svelte](/home/riordant/Repositories/Personal/keepsake/immich/web/src/lib/components/videos-page/recent-videos.svelte:29) via the `text-sm` class on the `<h2>`.
+
+### Photos page image-only filter
+
+- Updated the main `/photos` timeline to request only `IMAGE` assets via the existing timeline `assetType` filter.
+- This removes standalone video assets from the Photos grid while leaving the separate `/videos` surface unchanged.
+- Memories on the Photos page were intentionally left unchanged in this pass.

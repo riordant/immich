@@ -19,7 +19,7 @@ export const load = (async ({ fetch }) => {
 
     const authenticated = await loadUser();
     if (authenticated) {
-      redirect(307, Route.photos());
+      redirect(307, Route.videos());
     }
 
     if (serverConfigManager.value.isInitialized) {

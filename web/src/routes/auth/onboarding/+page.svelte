@@ -137,7 +137,7 @@
         onboardingDto: { isOnboarded: true },
       });
 
-      await goto(Route.photos());
+      await goto(Route.videos());
     } else {
       await goto(Route.onboarding({ step: onboardingSteps[nextStepIndex].name }));
     }

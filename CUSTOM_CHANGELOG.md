@@ -151,3 +151,10 @@ This file tracks local product customizations made on top of upstream Immich.
   - immediate asset date synchronization in `asset.service.spec.ts`
   - sidecar registration in `metadata.service.spec.ts`
   - `AssetUpdate` emission in both date modals
+
+### Explore gallery live-update fix
+
+- Fixed a remaining stale-UI bug on gallery-style routes reached from Explore and similar surfaces, where rotate and date changes still required a manual refresh even after the date-hardening work.
+- Root cause: [gallery-viewer.svelte](/home/riordant/Repositories/Personal/keepsake/immich/web/src/lib/components/shared-components/gallery-viewer/gallery-viewer.svelte:1) did not listen for global `AssetUpdate` events emitted by the edit/date modals, and it mutated its local asset arrays in place.
+- `GalleryViewer` now listens for `AssetUpdate` through `OnEvents` and immutably replaces matching assets in both `assets` and `viewerAssets`, forcing the gallery tile/title/thumbnail state to rerender immediately.
+- Added focused coverage in [gallery-viewer.spec.ts](/home/riordant/Repositories/Personal/keepsake/immich/web/src/lib/components/shared-components/gallery-viewer/gallery-viewer.spec.ts:1) to prove the rendered asset updates when `AssetUpdate` is emitted.

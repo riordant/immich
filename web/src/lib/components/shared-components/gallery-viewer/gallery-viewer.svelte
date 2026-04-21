@@ -2,6 +2,7 @@
   import { goto } from '$app/navigation';
   import { shortcuts, type ShortcutOptions } from '$lib/actions/shortcut';
   import type { Action } from '$lib/components/asset-viewer/actions/action';
+  import OnEvents from '$lib/components/OnEvents.svelte';
   import type { AssetCursor } from '$lib/components/asset-viewer/asset-viewer.svelte';
   import Thumbnail from '$lib/components/assets/thumbnail/thumbnail.svelte';
   import { AssetAction } from '$lib/constants';
@@ -97,9 +98,22 @@
     };
   });
 
+  const updateAssetInCollection = (collection: AssetResponseDto[] | undefined, asset: AssetResponseDto) => {
+    if (!collection) {
+      return collection;
+    }
+
+    const index = collection.findIndex((oldAsset) => oldAsset.id === asset.id);
+    if (index === -1) {
+      return collection;
+    }
+
+    return collection.map((currentAsset, currentIndex) => (currentIndex === index ? asset : currentAsset));
+  };
+
   const updateCurrentAsset = (asset: AssetResponseDto) => {
-    const index = assets.findIndex((oldAsset) => oldAsset.id === asset.id);
-    assets[index] = asset;
+    assets = updateAssetInCollection(assets, asset) ?? assets;
+    viewerAssets = updateAssetInCollection(viewerAssets, asset);
   };
 
   const updateSlidingWindow = () => (scrollTop = document.scrollingElement?.scrollTop ?? 0);
@@ -350,6 +364,8 @@
     previousAsset: getPreviousAsset(navigationAssets, assetViewerManager.asset),
   });
 </script>
+
+<OnEvents onAssetUpdate={updateCurrentAsset} />
 
 <svelte:document
   onkeydown={onKeyDown}

@@ -83,4 +83,26 @@ describe('AssetSelectionEditModal', () => {
     expect(emitSpy).toHaveBeenCalledWith('AssetUpdate', refreshedAsset2);
     expect(onClose).toHaveBeenCalledWith(true);
   });
+
+  it('shows a loading spinner while edits are being applied', async () => {
+    const user = userEvent.setup();
+    const pending = new Promise<[{ asset: { id: string } }]>(() => {});
+
+    waitForWebsocketEventMock.mockReturnValueOnce(pending);
+    sdkMock.getAssetEdits.mockResolvedValue({ assetId: 'asset-1', edits: [] } as never);
+    sdkMock.editAsset.mockResolvedValue({ assetId: 'asset-1', edits: [] } as never);
+
+    render(AssetSelectionEditModal, {
+      props: {
+        assets: [timelineAssetFactory.build({ id: 'asset-1', ownerId: 'owner-id', livePhotoVideoId: null })],
+        onClose: vi.fn(),
+      },
+    });
+
+    await user.click(screen.getByRole('button', { name: 'editor_rotate_right' }));
+    await user.click(screen.getByRole('button', { name: 'save' }));
+
+    expect(screen.getByRole('button', { name: 'save' })).toBeDisabled();
+    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+  });
 });

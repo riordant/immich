@@ -117,3 +117,8 @@ This file tracks local product customizations made on top of upstream Immich.
 - Updated `Image.svelte` to reset its internal source when `src` changes, cancel the old image URL, and trigger a fresh load cycle.
 - Added a focused `Image.spec.ts` case proving that rerendering with a new `src` updates the rendered `<img>` element.
 - Verified live in Playwright that after rotating a selected photo and clicking `Save`, the on-page tile switched from one thumbnail URL/cache key to a new one without a manual refresh.
+
+### Multi-select editor loading state
+
+- Updated the bulk editor modal to compose `Modal`/`ModalBody`/`ModalFooter` directly instead of `FormModal`, so its `Save` action can use the same `Button loading={...}` spinner treatment as the single-asset editor.
+- Added a focused modal test proving the bulk editor shows the loading spinner and disables the save button while edits are in flight.

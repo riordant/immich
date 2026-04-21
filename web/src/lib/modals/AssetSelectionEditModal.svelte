@@ -10,7 +10,7 @@
   import { getOwnedAssetsWithWarning } from '$lib/utils/asset-utils';
   import { handleError } from '$lib/utils/handle-error';
   import { editAsset, getAssetEdits, getAssetInfo, removeAssetEdits } from '@immich/sdk';
-  import { Button, FormModal } from '@immich/ui';
+  import { Button, HStack, Modal, ModalBody, ModalFooter } from '@immich/ui';
   import { mdiTune } from '@mdi/js';
   import { t } from 'svelte-i18n';
 
@@ -25,6 +25,7 @@
   let rotation = $state(0);
   let mirrorHorizontal = $state(false);
   let mirrorVertical = $state(false);
+  const formId = 'asset-selection-edit-form';
 
   const canReset = $derived(rotation !== 0 || mirrorHorizontal || mirrorVertical);
   const pendingEdits = $derived(
@@ -97,29 +98,50 @@
   };
 </script>
 
-<FormModal
-  title={$t('editor')}
-  icon={mdiTune}
-  onClose={() => onClose(false)}
-  {onSubmit}
-  submitText={$t('save')}
-  disabled={!canReset || loading}
-  size="small"
->
-  <div class="mt-3 px-4">
-    <OrientationControls onRotate={rotate} onMirror={mirror} />
-  </div>
-
-  <div class="px-4 pb-4 pt-8">
-    <Button
-      variant="outline"
-      onclick={() => resetAllChanges()}
-      disabled={!canReset || loading}
-      class="self-start"
-      shape="round"
-      size="small"
+<Modal title={$t('editor')} icon={mdiTune} onClose={() => onClose(false)} size="small">
+  <ModalBody>
+    <form
+      id={formId}
+      onsubmit={(event) => {
+        event.preventDefault();
+        void onSubmit();
+      }}
     >
-      {$t('editor_reset_all_changes')}
-    </Button>
-  </div>
-</FormModal>
+      <div class="mt-3 px-4">
+        <OrientationControls onRotate={rotate} onMirror={mirror} />
+      </div>
+
+      <div class="px-4 pb-4 pt-8">
+        <Button
+          variant="outline"
+          onclick={() => resetAllChanges()}
+          disabled={!canReset || loading}
+          class="self-start"
+          shape="round"
+          size="small"
+        >
+          {$t('editor_reset_all_changes')}
+        </Button>
+      </div>
+    </form>
+  </ModalBody>
+
+  <ModalFooter>
+    <HStack fullWidth>
+      <Button shape="round" color="secondary" fullWidth onclick={() => onClose(false)} disabled={loading}>
+        {$t('cancel')}
+      </Button>
+      <Button
+        shape="round"
+        type="submit"
+        tabindex={1}
+        fullWidth
+        disabled={!canReset}
+        loading={loading}
+        form={formId}
+      >
+        {$t('save')}
+      </Button>
+    </HStack>
+  </ModalFooter>
+</Modal>

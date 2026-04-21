@@ -273,6 +273,26 @@ export class AssetRepository {
       .execute();
   }
 
+  @GenerateSql({ params: [[DummyValue.UUID]] })
+  @Chunked()
+  async syncDateTimesFromExif(ids: string[]): Promise<void> {
+    if (ids.length === 0) {
+      return;
+    }
+
+    await this.db
+      .updateTable('asset')
+      .from('asset_exif')
+      .set({
+        fileCreatedAt: sql`asset_exif."dateTimeOriginal"`,
+        localDateTime:
+          sql`(asset_exif."dateTimeOriginal" AT TIME ZONE coalesce(asset_exif."timeZone", 'UTC')) AT TIME ZONE 'UTC'`,
+      })
+      .whereRef('asset.id', '=', 'asset_exif.assetId')
+      .where('asset.id', '=', anyUuid(ids))
+      .execute();
+  }
+
   @GenerateSql({ params: [DummyValue.UUID, ['description']] })
   unlockProperties(assetId: string, properties: LockableProperty[]) {
     return this.db

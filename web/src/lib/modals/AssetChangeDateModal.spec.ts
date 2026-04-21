@@ -1,6 +1,9 @@
 import { getAnimateMock } from '$lib/__mocks__/animate.mock';
 import { getIntersectionObserverMock } from '$lib/__mocks__/intersection-observer.mock';
+import { sdkMock } from '$lib/__mocks__/sdk.mock';
 import { getVisualViewportMock } from '$lib/__mocks__/visual-viewport.mock';
+import { eventManager } from '$lib/managers/event-manager.svelte';
+import { assetFactory } from '@test-data/factories/asset-factory';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { DateTime } from 'luxon';
 import { afterAll, beforeEach, describe, expect, test, vi } from 'vitest';
@@ -63,5 +66,29 @@ describe('AssetChangeDateModal component', () => {
 
     expect(datetimeInput.value).not.toBe(beforeDatetime);
     expect(timezoneInput.value).toBe('Pacific/Pitcairn (-08:00)');
+  });
+
+  test('emits AssetUpdate after saving the new date', async () => {
+    const emitSpy = vi.spyOn(eventManager, 'emit');
+    const updatedAsset = assetFactory.build({ id: 'asset-id' });
+    sdkMock.updateAsset.mockResolvedValue(updatedAsset);
+
+    render(AssetChangeDateModal, {
+      props: {
+        initialDate,
+        initialTimeZone,
+        timezoneInput: true,
+        asset: { id: 'asset-id' } as never,
+        onClose,
+      },
+    });
+
+    await fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
+
+    expect(sdkMock.updateAsset).toHaveBeenCalledWith({
+      id: 'asset-id',
+      updateAssetDto: { dateTimeOriginal: '2026-03-19T23:31:30.112Z' },
+    });
+    expect(emitSpy).toHaveBeenCalledWith('AssetUpdate', updatedAsset);
   });
 });

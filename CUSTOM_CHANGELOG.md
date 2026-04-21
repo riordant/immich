@@ -139,3 +139,15 @@ This file tracks local product customizations made on top of upstream Immich.
 - Updated the main `/photos` timeline to request only `IMAGE` assets via the existing timeline `assetType` filter.
 - This removes standalone video assets from the Photos grid while leaving the separate `/videos` surface unchanged.
 - Memories on the Photos page were intentionally left unchanged in this pass.
+
+### Date-change hardening
+
+- Hardened asset date changes so they update the authoritative asset timeline fields immediately instead of waiting for the async sidecar-write and metadata-extraction round trip.
+- Added `AssetRepository.syncDateTimesFromExif(...)` and now call it directly after single-asset and bulk date edits in `AssetService`, so routes like `Explore -> People -> person` do not depend on websocket-driven eventual consistency to reflect date changes.
+- Updated `AssetChangeDateModal.svelte` to emit `AssetUpdate` from the returned `updateAsset(...)` response.
+- Updated `AssetSelectionChangeDateModal.svelte` to refresh the changed assets with `getAssetInfo(...)` and emit `AssetUpdate` for each one after bulk date changes, so filtered timelines reposition items without a manual page refresh.
+- Fixed a related sidecar bug in `MetadataService.handleSidecarWrite(...)`: writing a new `.xmp` now registers the sidecar file whenever one did not already exist, instead of only when `asset.files.length === 0`.
+- Added focused server and web test coverage for:
+  - immediate asset date synchronization in `asset.service.spec.ts`
+  - sidecar registration in `metadata.service.spec.ts`
+  - `AssetUpdate` emission in both date modals

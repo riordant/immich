@@ -2,7 +2,11 @@ import { getAnimateMock } from '$lib/__mocks__/animate.mock';
 import { getIntersectionObserverMock } from '$lib/__mocks__/intersection-observer.mock';
 import { sdkMock } from '$lib/__mocks__/sdk.mock';
 import { getVisualViewportMock } from '$lib/__mocks__/visual-viewport.mock';
+import { eventManager } from '$lib/managers/event-manager.svelte';
 import { calcNewDate } from '$lib/modals/timezone-utils';
+import { user as userStore } from '$lib/stores/user.store';
+import { timelineAssetFactory } from '@test-data/factories/asset-factory';
+import { userAdminFactory } from '@test-data/factories/user-factory';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { DateTime } from 'luxon';
@@ -25,6 +29,7 @@ describe('DateSelectionModal component', () => {
     vi.stubGlobal('visualViewport', getVisualViewportMock());
     vi.resetAllMocks();
     Element.prototype.animate = getAnimateMock();
+    userStore.set(userAdminFactory.build({ id: 'owner-id' }));
   });
 
   afterAll(async () => {
@@ -59,6 +64,22 @@ describe('DateSelectionModal component', () => {
         dateTimeOriginal: '2024-01-01T00:00:00.000+01:00',
       },
     });
+  });
+
+  test('emits AssetUpdate events after refreshing changed assets', async () => {
+    const emitSpy = vi.spyOn(eventManager, 'emit');
+    const assets = [timelineAssetFactory.build({ id: 'asset-1', ownerId: 'owner-id' })];
+    const refreshedAsset = { id: 'asset-1' };
+    sdkMock.getAssetInfo.mockResolvedValue(refreshedAsset as never);
+
+    render(AssetSelectionChangeDateModal, {
+      props: { initialDate, initialTimeZone, assets, onClose },
+    });
+
+    await fireEvent.click(getConfirmButton());
+
+    expect(sdkMock.getAssetInfo).toHaveBeenCalledWith({ id: 'asset-1' });
+    expect(emitSpy).toHaveBeenCalledWith('AssetUpdate', refreshedAsset);
   });
 
   test('calls onCancel on cancel', async () => {

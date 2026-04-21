@@ -125,6 +125,10 @@ export class AssetService extends BaseService {
 
     await this.updateExif({ id, description, dateTimeOriginal, latitude, longitude, rating });
 
+    if (dateTimeOriginal) {
+      await this.assetRepository.syncDateTimesFromExif([id]);
+    }
+
     const asset = await this.assetRepository.update({ id, ...rest });
 
     if (previousMotion && asset) {
@@ -175,6 +179,7 @@ export class AssetService extends BaseService {
     }
 
     const extractedTimeZone = extractTimeZone(dateTimeOriginal);
+    let shouldSyncDateTimes = dateTimeOriginal !== undefined;
 
     if (
       (dateTimeRelative !== undefined && dateTimeRelative !== 0) ||
@@ -182,6 +187,11 @@ export class AssetService extends BaseService {
       extractedTimeZone?.type === 'fixed'
     ) {
       await this.assetRepository.updateDateTimeOriginal(ids, dateTimeRelative, timeZone ?? extractedTimeZone?.name);
+      shouldSyncDateTimes = true;
+    }
+
+    if (shouldSyncDateTimes) {
+      await this.assetRepository.syncDateTimesFromExif(ids);
     }
 
     if (Object.keys(assetDto).length > 0) {

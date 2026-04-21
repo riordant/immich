@@ -1849,6 +1849,25 @@ describe(MetadataService.name, () => {
       expect(mocks.metadata.writeTags).toHaveBeenCalledWith(asset.files[0].path, { Rating: 0 });
       expect(mocks.asset.unlockProperties).toHaveBeenCalledWith(asset.id, ['rating']);
     });
+
+    it('should register a new sidecar file when one did not already exist', async () => {
+      const asset = AssetFactory.from().file({ type: AssetFileType.Thumbnail }).exif({ description: 'hello' }).build();
+
+      mocks.assetJob.getLockedPropertiesForMetadataExtraction.mockResolvedValue(['description']);
+      mocks.assetJob.getForSidecarWriteJob.mockResolvedValue(getForSidecarWrite(asset));
+
+      await expect(sut.handleSidecarWrite({ id: asset.id })).resolves.toBe(JobStatus.Success);
+
+      expect(mocks.metadata.writeTags).toHaveBeenCalledWith(`${asset.originalPath}.xmp`, {
+        Description: 'hello',
+        ImageDescription: 'hello',
+      });
+      expect(mocks.asset.upsertFile).toHaveBeenCalledWith({
+        assetId: asset.id,
+        type: AssetFileType.Sidecar,
+        path: `${asset.originalPath}.xmp`,
+      });
+    });
   });
 
   describe('firstDateTime', () => {

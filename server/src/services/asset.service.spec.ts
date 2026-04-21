@@ -246,6 +246,17 @@ describe(AssetService.name, () => {
       );
     });
 
+    it('should update authoritative asset dates immediately when date changes', async () => {
+      const asset = AssetFactory.create();
+      mocks.access.asset.checkOwnerAccess.mockResolvedValue(new Set([asset.id]));
+      mocks.asset.getById.mockResolvedValueOnce(getForAsset(asset));
+      mocks.asset.update.mockResolvedValueOnce(getForAsset(asset));
+
+      await sut.update(authStub.admin, asset.id, { dateTimeOriginal: '2024-03-19T11:22:33.444+01:00' });
+
+      expect(mocks.asset.syncDateTimesFromExif).toHaveBeenCalledWith([asset.id]);
+    });
+
     it('should fail linking a live video if the motion part could not be found', async () => {
       const auth = AuthFactory.create();
       const asset = AssetFactory.create();
@@ -457,6 +468,7 @@ describe(AssetService.name, () => {
         latitude: 30,
         longitude: 50,
       });
+      expect(mocks.asset.syncDateTimesFromExif).toHaveBeenCalledWith(['asset-1']);
       expect(mocks.job.queueAll).toHaveBeenCalledWith([{ name: JobName.SidecarWrite, data: { id: 'asset-1' } }]);
     });
 
@@ -487,6 +499,7 @@ describe(AssetService.name, () => {
         timeZone,
       });
       expect(mocks.asset.updateDateTimeOriginal).toHaveBeenCalledWith(['asset-1'], dateTimeRelative, timeZone);
+      expect(mocks.asset.syncDateTimesFromExif).toHaveBeenCalledWith(['asset-1']);
       expect(mocks.job.queueAll).toHaveBeenCalledWith([{ name: JobName.SidecarWrite, data: { id: 'asset-1' } }]);
     });
   });

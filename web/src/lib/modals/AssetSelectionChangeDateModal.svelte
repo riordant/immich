@@ -2,12 +2,13 @@
   import Combobox from '$lib/components/shared-components/combobox.svelte';
   import DateInput from '$lib/elements/DateInput.svelte';
   import DurationInput from '$lib/elements/DurationInput.svelte';
+  import { eventManager } from '$lib/managers/event-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
   import { getPreferredTimeZone, getTimezones, toIsoDate, type ZoneOption } from '$lib/modals/timezone-utils';
   import { user } from '$lib/stores/user.store';
   import { getOwnedAssetsWithWarning } from '$lib/utils/asset-utils';
   import { handleError } from '$lib/utils/handle-error';
-  import { updateAssets } from '@immich/sdk';
+  import { getAssetInfo, updateAssets } from '@immich/sdk';
   import { Field, FormModal, Label, Switch } from '@immich/ui';
   import { mdiCalendarEdit } from '@mdi/js';
   import { DateTime } from 'luxon';
@@ -30,6 +31,15 @@
   // the offsets (and validity) for time zones may change if the date is changed, which is why we recompute the list
   let selectedOption = $derived(getPreferredTimeZone(initialDate, initialTimeZone, timezones, lastSelectedTimezone));
 
+  const refreshChangedAssets = async (ids: string[]) => {
+    const refreshedAssets = await Promise.allSettled(ids.map((id) => getAssetInfo({ id })));
+    for (const result of refreshedAssets) {
+      if (result.status === 'fulfilled') {
+        eventManager.emit('AssetUpdate', result.value);
+      }
+    }
+  };
+
   const onSubmit = async () => {
     const ids = getOwnedAssetsWithWarning(assets, $user);
     try {
@@ -41,11 +51,13 @@
             timeZone: selectedOption?.value,
           },
         });
+        await refreshChangedAssets(ids);
         onClose(true);
         return;
       }
       const isoDate = toIsoDate(selectedDate, selectedOption);
       await updateAssets({ assetBulkUpdateDto: { ids, dateTimeOriginal: isoDate } });
+      await refreshChangedAssets(ids);
       onClose(true);
     } catch (error) {
       handleError(error, $t('errors.unable_to_change_date'));

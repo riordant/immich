@@ -1,5 +1,6 @@
 <script lang="ts">
   import { thumbhash } from '$lib/actions/thumbhash';
+  import OnEvents from '$lib/components/OnEvents.svelte';
   import { ProjectionType } from '$lib/constants';
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import type { TimelineAsset } from '$lib/managers/timeline-manager/types';
@@ -84,11 +85,25 @@
   let mouseOver = $state(false);
   let loaded = $state(false);
   let thumbError = $state(false);
+  let editRefreshKey = $state(0);
 
   let width = $derived(thumbnailSize || thumbnailWidth || 235);
   let height = $derived(thumbnailSize || thumbnailHeight || 235);
 
   let assetOwner = $derived(albumUsers?.find((user) => user.id === asset.ownerId) ?? null);
+  let thumbnailCacheKey = $derived(
+    editRefreshKey === 0 ? asset.thumbhash : `${asset.thumbhash ?? 'edited'}-${editRefreshKey}`,
+  );
+
+  const handleAssetEditsApplied = (assetId: string) => {
+    if (asset.id !== assetId) {
+      return;
+    }
+
+    editRefreshKey += 1;
+    loaded = false;
+    thumbError = false;
+  };
 
   const onIconClickedHandler = (e?: MouseEvent) => {
     e?.stopPropagation();
@@ -210,6 +225,8 @@
   });
 </script>
 
+<OnEvents onAssetEditsApplied={handleAssetEditsApplied} />
+
 <div
   class={[
     'group focus-visible:outline-none flex overflow-hidden transition-[background-color,border-radius]',
@@ -265,7 +282,7 @@
           { 'rounded-xl': selected },
           brokenAssetClass,
         ]}
-        url={getAssetMediaUrl({ id: asset.id, size: AssetMediaSize.Thumbnail, cacheKey: asset.thumbhash })}
+        url={getAssetMediaUrl({ id: asset.id, size: AssetMediaSize.Thumbnail, cacheKey: thumbnailCacheKey })}
         altText={$getAltText(asset)}
         widthStyle="{width}px"
         heightStyle="{height}px"

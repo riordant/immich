@@ -158,3 +158,13 @@ This file tracks local product customizations made on top of upstream Immich.
 - Root cause: [gallery-viewer.svelte](/home/riordant/Repositories/Personal/keepsake/immich/web/src/lib/components/shared-components/gallery-viewer/gallery-viewer.svelte:1) did not listen for global `AssetUpdate` events emitted by the edit/date modals, and it mutated its local asset arrays in place.
 - `GalleryViewer` now listens for `AssetUpdate` through `OnEvents` and immutably replaces matching assets in both `assets` and `viewerAssets`, forcing the gallery tile/title/thumbnail state to rerender immediately.
 - Added focused coverage in [gallery-viewer.spec.ts](/home/riordant/Repositories/Personal/keepsake/immich/web/src/lib/components/shared-components/gallery-viewer/gallery-viewer.spec.ts:1) to prove the rendered asset updates when `AssetUpdate` is emitted.
+
+## 2026-04-29
+
+### Multi-select editor thumbnail cache invalidation
+
+- Hardened the bulk rotate/mirror live-refresh path by making shared timeline thumbnails respond directly to `AssetEditsApplied` events.
+- `Thumbnail.svelte` now increments a local edit refresh key for the matching asset id and appends it to the existing thumbnail cache key, forcing the image URL to change even before broader page state has reloaded.
+- This keeps the fix scoped to the shared thumbnail surface rather than adding page-specific refresh logic for Photos, People, or other grids.
+- Added focused test coverage proving matching edit events change the thumbnail `c=` cache key while unrelated asset edit events do not.
+- Verification note: the focused Vitest command was blocked in this shell by Node `v18.16.0`; the repo currently requires Node `v24.14.1`.

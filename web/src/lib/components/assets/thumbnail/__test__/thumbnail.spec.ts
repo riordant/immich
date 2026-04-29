@@ -1,8 +1,9 @@
 import { getIntersectionObserverMock } from '$lib/__mocks__/intersection-observer.mock';
 import Thumbnail from '$lib/components/assets/thumbnail/thumbnail.svelte';
+import { eventManager } from '$lib/managers/event-manager.svelte';
 import { getTabbable } from '$lib/utils/focus-util';
-import { assetFactory } from '@test-data/factories/asset-factory';
-import { render } from '@testing-library/svelte';
+import { assetFactory, timelineAssetFactory } from '@test-data/factories/asset-factory';
+import { render, waitFor } from '@testing-library/svelte';
 
 vi.hoisted(() => {
   Object.defineProperty(globalThis, 'matchMedia', {
@@ -57,5 +58,26 @@ describe('Thumbnail component', () => {
 
     const thumbhash = sut.getByTestId('thumbhash');
     expect(thumbhash).not.toBeFalsy();
+  });
+
+  it('refreshes the thumbnail cache key when edits are applied to the asset', async () => {
+    const asset = timelineAssetFactory.build({
+      id: 'asset-1',
+      thumbhash: 'initial-thumbhash',
+      isImage: true,
+      isVideo: false,
+      livePhotoVideoId: null,
+    });
+    const { baseElement } = render(Thumbnail, { asset });
+
+    const getImageCacheKey = () => new URL(baseElement.querySelector('img')!.src).searchParams.get('c');
+
+    expect(getImageCacheKey()).toBe('initial-thumbhash');
+
+    eventManager.emit('AssetEditsApplied', 'unrelated-asset');
+    expect(getImageCacheKey()).toBe('initial-thumbhash');
+
+    eventManager.emit('AssetEditsApplied', 'asset-1');
+    await waitFor(() => expect(getImageCacheKey()).toBe('initial-thumbhash-1'));
   });
 });

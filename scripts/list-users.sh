@@ -14,12 +14,10 @@ else
 fi
 
 : "${IMMICH_URL:?IMMICH_URL must be set in .env}"
-: "${HOST_USERDATA_ROOT:?HOST_USERDATA_ROOT must be set in .env}"
-: "${CONTAINER_USERDATA_ROOT:?CONTAINER_USERDATA_ROOT must be set in .env}"
 : "${API_KEY:?API_KEY must be set in .env}"set -euo pipefail
 
-if [ "$#" -ne 1 ]; then
-  echo "Usage: $0 <user_id>" >&2
+if [ "$#" -ne 0 ]; then
+  echo "Usage: $0" >&2
   exit 1
 fi
 

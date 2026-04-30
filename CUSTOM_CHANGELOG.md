@@ -168,3 +168,11 @@ This file tracks local product customizations made on top of upstream Immich.
 - This keeps the fix scoped to the shared thumbnail surface rather than adding page-specific refresh logic for Photos, People, or other grids.
 - Added focused test coverage proving matching edit events change the thumbnail `c=` cache key while unrelated asset edit events do not.
 - Verification note: the focused Vitest command was blocked in this shell by Node `v18.16.0`; the repo currently requires Node `v24.14.1`.
+
+### Description edit prefill
+
+- Updated the bulk `Change description` modal to prefill from the selected asset description when the selected owned assets share the same value.
+- Left the modal blank for mixed-description selections to avoid implying that one existing value applies to every selected asset.
+- Allowed submitting an empty description string so users can intentionally clear descriptions from the same flow.
+- Refreshed changed assets with `getAssetInfo(...)` and emitted `AssetUpdate` after bulk description saves, keeping description-backed video titles current without a reload.
+- Added focused web tests covering modal prefill, empty-description submission, mixed-selection behavior, and post-save `AssetUpdate` emission.

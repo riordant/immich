@@ -14,8 +14,6 @@ else
 fi
 
 : "${IMMICH_URL:?IMMICH_URL must be set in .env}"
-: "${HOST_USERDATA_ROOT:?HOST_USERDATA_ROOT must be set in .env}"
-: "${CONTAINER_USERDATA_ROOT:?CONTAINER_USERDATA_ROOT must be set in .env}"
 : "${API_KEY:?API_KEY must be set in .env}"set -euo pipefail
 
 if [ "$#" -ne 1 ]; then
@@ -25,13 +23,11 @@ fi
 
 USER_ID="$1"
 
-echo "get library IDs.."
 LIBRARIES_JSON="$(curl -fsS \
   -X GET "${IMMICH_URL}/api/libraries" \
   -H "Accept: application/json" \
   -H "x-api-key: ${API_KEY}"
 )"
-echo "done.."
 
 MATCH_COUNT="$(echo "$LIBRARIES_JSON" | jq --arg uid "$USER_ID" '[.[] | select(.ownerId == $uid)] | length')"
 

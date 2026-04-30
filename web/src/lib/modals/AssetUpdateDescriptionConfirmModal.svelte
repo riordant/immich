@@ -4,11 +4,16 @@
   import { t } from 'svelte-i18n';
 
   type Props = {
+    initialDescription?: string;
     onClose: (description?: string) => void;
   };
 
-  let { onClose }: Props = $props();
+  let { initialDescription = '', onClose }: Props = $props();
   let description = $state('');
+
+  $effect(() => {
+    description = initialDescription;
+  });
 </script>
 
 <FormModal title={$t('edit_description')} icon={mdiText} {onClose} onSubmit={() => onClose(description)}>

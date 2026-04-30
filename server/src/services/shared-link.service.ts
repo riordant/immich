@@ -15,7 +15,10 @@ import { AssetType, Permission, SharedLinkType } from 'src/enum';
 import { BaseService } from 'src/services/base.service';
 import { getExternalDomain, OpenGraphTags } from 'src/utils/misc';
 
-const stripFileExtension = (originalFileName: string) => originalFileName.replace(/\.[^/.]+$/, '');
+const getAssetDescription = (asset: unknown) => {
+  const exifInfo = (asset as { exifInfo?: { description?: string | null } | null }).exifInfo;
+  return exifInfo?.description?.trim() || null;
+};
 
 @Injectable()
 export class SharedLinkService extends BaseService {
@@ -238,15 +241,20 @@ export class SharedLinkService extends BaseService {
       sharedLink.album?.assets[0] ||
       sharedLink.assets[0];
 
-    const imagePath = previewAsset ? `/api/assets/${previewAsset.id}/thumbnail?key=${sharedLink.key.toString('base64url')}` : '/feature-panel.png';
-    const sharerName = sharedLink.album?.owner?.name || (await this.userRepository.get(sharedLink.userId, {}))?.name || 'Someone';
+    const imagePath = previewAsset
+      ? `/api/assets/${previewAsset.id}/thumbnail?key=${sharedLink.key.toString('base64url')}`
+      : '/feature-panel.png';
+    const sharerName =
+      sharedLink.album?.owner?.name || (await this.userRepository.get(sharedLink.userId, {}))?.name || 'Someone';
 
     let title: string;
     if (sharedLink.album) {
       title = `${sharerName} shared album: ${sharedLink.album.albumName} with you`;
     } else if (assetCount === 1 && previewAsset?.type === AssetType.Video) {
-      const movieName = stripFileExtension(previewAsset.originalFileName) || previewAsset.originalFileName;
-      title = `${sharerName} shared a movie: ${movieName} with you`;
+      const videoTitle = getAssetDescription(previewAsset);
+      title = videoTitle
+        ? `${sharerName} shared a video with you: ${videoTitle}`
+        : `${sharerName} shared a video with you`;
     } else if (assetCount === 1) {
       title = `${sharerName} shared a photo with you`;
     } else {

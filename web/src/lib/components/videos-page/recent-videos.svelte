@@ -1,5 +1,6 @@
 <script lang="ts">
   import Thumbnail from '$lib/components/assets/thumbnail/thumbnail.svelte';
+  import VideoProgressBar from '$lib/components/videos-page/video-progress-bar.svelte';
   import VideoTitleBand from '$lib/components/videos-page/video-title-band.svelte';
   import { mediaQueryManager } from '$lib/stores/media-query-manager.svelte';
   import { userInteraction } from '$lib/stores/user.svelte';
@@ -46,11 +47,14 @@
             <Thumbnail
               {asset}
               readonly
-              thumbnailWidth={thumbnailWidth}
-              thumbnailHeight={thumbnailHeight}
+              {thumbnailWidth}
+              {thumbnailHeight}
               onClick={(asset) => void navigate({ targetRoute: 'current', assetId: asset.id })}
             />
-            <VideoTitleBand originalFileName={asset.originalFileName} title={asset.description} {progressPercent} />
+            <div class="pointer-events-none absolute inset-x-2 bottom-2 space-y-1">
+              <VideoTitleBand title={asset.description} />
+              <VideoProgressBar {progressPercent} />
+            </div>
           </div>
         {/each}
       </div>

@@ -3,8 +3,7 @@ import { assetMultiSelectManager } from '$lib/managers/asset-multi-select-manage
 import { eventManager } from '$lib/managers/event-manager.svelte';
 import { AssetTypeEnum } from '@immich/sdk';
 import { assetFactory } from '@test-data/factories/asset-factory';
-import { render, screen } from '@testing-library/svelte';
-import { waitFor } from '@testing-library/svelte';
+import { render, screen, waitFor } from '@testing-library/svelte';
 
 vi.mock('$lib/components/assets/thumbnail/thumbnail.svelte', async () => {
   const { default: MockThumbnail } = await import('@test-data/MockThumbnail.svelte');
@@ -45,6 +44,24 @@ describe('GalleryViewer component', () => {
     expect(screen.getByText('Edited Holiday Title')).toBeInTheDocument();
     expect(screen.queryByText('family-photo')).not.toBeInTheDocument();
     expect(screen.queryByText('Photo Description')).not.toBeInTheDocument();
+  });
+
+  it('hides the video title band when the video description is empty', () => {
+    const video = assetFactory.build({
+      type: AssetTypeEnum.Video,
+      originalFileName: 'Holiday Clip.mov',
+      exifInfo: { description: '' },
+    });
+
+    render(GalleryViewer, {
+      assets: [video],
+      assetInteraction: assetMultiSelectManager,
+      viewport: { width: 800, height: 600 },
+      showVideoTitleBand: true,
+    });
+
+    expect(screen.queryByText('Holiday Clip')).not.toBeInTheDocument();
+    expect(screen.queryByText('Holiday Clip.mov')).not.toBeInTheDocument();
   });
 
   it('updates rendered assets when an AssetUpdate event is emitted', async () => {

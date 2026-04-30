@@ -405,7 +405,9 @@
             thumbnailHeight={geometry.getHeight(i)}
           />
           {#if showVideoTitleBand && !isTimelineAsset(asset) && asset.type === AssetTypeEnum.Video}
-            <VideoTitleBand originalFileName={asset.originalFileName} title={asset.exifInfo?.description} />
+            <div class="pointer-events-none absolute inset-x-2 bottom-2">
+              <VideoTitleBand title={asset.exifInfo?.description} />
+            </div>
           {/if}
           {#if showAssetName && !isTimelineAsset(asset)}
             <div

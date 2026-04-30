@@ -3,6 +3,7 @@
   import UserPageLayout from '$lib/components/layouts/user-page-layout.svelte';
   import RecentVideos from '$lib/components/videos-page/recent-videos.svelte';
   import VideoTitleBand from '$lib/components/videos-page/video-title-band.svelte';
+  import VideoProgressBar from '$lib/components/videos-page/video-progress-bar.svelte';
   import ButtonContextMenu from '$lib/components/shared-components/context-menu/button-context-menu.svelte';
   import EmptyPlaceholder from '$lib/components/shared-components/empty-placeholder.svelte';
   import ArchiveAction from '$lib/components/timeline/actions/ArchiveAction.svelte';
@@ -116,14 +117,14 @@
     <RecentVideos />
 
     {#snippet customThumbnailLayout(asset)}
-      <VideoTitleBand
-        originalFileName={asset.originalFileName}
-        title={asset.description}
-        progressPercent={getPlaybackProgressPercent({
-          duration: asset.duration,
-          positionSeconds: playbackPositions[asset.id],
-        })}
-      />
+      {@const progressPercent = getPlaybackProgressPercent({
+        duration: asset.duration,
+        positionSeconds: playbackPositions[asset.id],
+      })}
+      <div class="pointer-events-none absolute inset-x-2 bottom-2 space-y-1">
+        <VideoTitleBand title={asset.description} />
+        <VideoProgressBar {progressPercent} />
+      </div>
     {/snippet}
 
     {#snippet empty()}

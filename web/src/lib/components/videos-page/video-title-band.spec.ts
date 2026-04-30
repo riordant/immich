@@ -4,47 +4,28 @@ import { render, screen } from '@testing-library/svelte';
 
 describe('VideoTitleBand component', () => {
   it('renders the provided title when available', () => {
-    render(VideoTitleBand, { originalFileName: 'Family Trip 2024.mov', title: 'Best Day Ever' });
+    render(VideoTitleBand, { title: 'Best Day Ever' });
 
     const title = screen.getByText('Best Day Ever');
     expect(title).toHaveAttribute('title', 'Best Day Ever');
   });
 
-  it('falls back to the filename without the extension when the title is missing', () => {
-    render(VideoTitleBand, { originalFileName: 'Family Trip 2024.mov', title: null });
+  it('trims the title before rendering', () => {
+    render(VideoTitleBand, { title: '  Best Day Ever  ' });
 
-    expect(screen.getByText('Family Trip 2024')).toBeInTheDocument();
+    const title = screen.getByText('Best Day Ever');
+    expect(title).toHaveAttribute('title', 'Best Day Ever');
   });
 
-  it('renders the filename without the extension', () => {
-    render(VideoTitleBand, { originalFileName: 'Family Trip 2024.mov' });
+  it('renders nothing when the title is missing', () => {
+    render(VideoTitleBand, { title: null });
 
-    expect(screen.getByText('Family Trip 2024')).toBeInTheDocument();
+    expect(screen.queryByText(/.+/)).not.toBeInTheDocument();
   });
 
-  it('preserves dots in the base filename', () => {
-    render(VideoTitleBand, { originalFileName: 'clip.v1.final.mp4' });
+  it('renders nothing when the title is blank', () => {
+    render(VideoTitleBand, { title: '   ' });
 
-    const title = screen.getByText('clip.v1.final');
-    expect(title).toHaveAttribute('title', 'clip.v1.final.mp4');
-  });
-
-  it('falls back to the filename when the provided title is blank', () => {
-    render(VideoTitleBand, { originalFileName: 'clip.v1.final.mp4', title: '   ' });
-
-    const title = screen.getByText('clip.v1.final');
-    expect(title).toHaveAttribute('title', 'clip.v1.final.mp4');
-  });
-
-  it('renders a playback progress bar when progress is provided', () => {
-    render(VideoTitleBand, { originalFileName: 'Family Trip 2024.mov', progressPercent: 25 });
-
-    expect(screen.getByTestId('video-progress-bar')).toHaveStyle({ width: '25%' });
-  });
-
-  it('does not render a playback progress bar when progress is missing', () => {
-    render(VideoTitleBand, { originalFileName: 'Family Trip 2024.mov' });
-
-    expect(screen.queryByTestId('video-progress-bar')).not.toBeInTheDocument();
+    expect(screen.queryByText(/.+/)).not.toBeInTheDocument();
   });
 });

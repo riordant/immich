@@ -32,7 +32,7 @@ describe('RecentVideos component', () => {
     userInteraction.videoPlaybackPositions = undefined;
   });
 
-  it('fetches recent videos and renders titles without extensions', async () => {
+  it('fetches recent videos and renders description-backed titles only', async () => {
     const recentVideos = [
       assetFactory.build({
         type: AssetTypeEnum.Video,
@@ -49,17 +49,23 @@ describe('RecentVideos component', () => {
     await waitFor(() => expect(sdkMock.getMyRecentVideos).toHaveBeenCalledTimes(1));
 
     expect(screen.getByText('Newest title')).toBeInTheDocument();
-    expect(screen.getByText('Older clip')).toBeInTheDocument();
+    expect(screen.queryByText('Older clip')).not.toBeInTheDocument();
+    expect(screen.queryByText('Older clip.mp4')).not.toBeInTheDocument();
   });
 
   it('uses cached recent videos without refetching and opens items in the current route', async () => {
-    const cachedVideo = assetFactory.build({ type: AssetTypeEnum.Video, originalFileName: 'Watched again.mkv' });
+    const cachedVideo = assetFactory.build({
+      type: AssetTypeEnum.Video,
+      originalFileName: 'Watched again.mkv',
+      exifInfo: { description: 'Watched title' },
+    });
     userInteraction.recentVideos = [cachedVideo];
 
     render(RecentVideos);
 
     expect(sdkMock.getMyRecentVideos).not.toHaveBeenCalled();
-    expect(screen.getByText('Watched again')).toBeInTheDocument();
+    expect(screen.getByText('Watched title')).toBeInTheDocument();
+    expect(screen.queryByText('Watched again')).not.toBeInTheDocument();
 
     await fireEvent.click(screen.getByRole('link'));
 
@@ -85,6 +91,7 @@ describe('RecentVideos component', () => {
       type: AssetTypeEnum.Video,
       originalFileName: 'Watched again.mkv',
       duration: '00:02:00.000',
+      exifInfo: { description: '' },
     });
     userInteraction.recentVideos = [watchedVideo];
     userInteraction.videoPlaybackPositions = { [watchedVideo.id]: 30 };
@@ -92,6 +99,7 @@ describe('RecentVideos component', () => {
     render(RecentVideos);
 
     expect(screen.getByTestId('video-progress-bar')).toHaveStyle({ width: '25%' });
+    expect(screen.queryByText('Watched again')).not.toBeInTheDocument();
   });
 
   it('updates cached recent video titles when an AssetUpdate event is emitted', async () => {

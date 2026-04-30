@@ -176,3 +176,11 @@ This file tracks local product customizations made on top of upstream Immich.
 - Allowed submitting an empty description string so users can intentionally clear descriptions from the same flow.
 - Refreshed changed assets with `getAssetInfo(...)` and emitted `AssetUpdate` after bulk description saves, keeping description-backed video titles current without a reload.
 - Added focused web tests covering modal prefill, empty-description submission, mixed-selection behavior, and post-save `AssetUpdate` emission.
+
+### Description-only video titles
+
+- Removed filename fallback from web video title bands so video tile titles now render only when the asset description is set.
+- Split playback progress into a separate video progress component so progress bars remain visible on `/videos` and `Continue Watching` even when a video has no description/title.
+- Kept shared-link gallery video titles description-only as well; descriptionless videos no longer show filename overlays on public shared links.
+- Updated public shared-link Open Graph copy for single-video links to use asset description when present: `"{user} shared a video with you: {description}"`, otherwise `"{user} shared a video with you"`.
+- Added focused web and server tests covering description-only title rendering, standalone progress bars, shared-link gallery hiding behavior, and single-video Open Graph copy.
